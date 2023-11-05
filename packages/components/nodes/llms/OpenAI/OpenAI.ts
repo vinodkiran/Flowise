@@ -3,6 +3,7 @@ import { getBaseClasses, getCredentialData, getCredentialParam } from '../../../
 import { OpenAI, OpenAIInput } from 'langchain/llms/openai'
 import { BaseLLMParams } from 'langchain/llms/base'
 import { BaseCache } from 'langchain/schema'
+import { Moderation } from '../../responsibleAI/Moderation'
 
 class OpenAI_LLMs implements INode {
     label: string
@@ -19,7 +20,7 @@ class OpenAI_LLMs implements INode {
     constructor() {
         this.label = 'OpenAI'
         this.name = 'openAI'
-        this.version = 3.0
+        this.version = 4.0
         this.type = 'OpenAI'
         this.icon = 'openai.png'
         this.category = 'LLMs'
@@ -36,6 +37,12 @@ class OpenAI_LLMs implements INode {
                 label: 'Cache',
                 name: 'cache',
                 type: 'BaseCache',
+                optional: true
+            },
+            {
+                label: 'Input Moderation',
+                name: 'inputModeration',
+                type: 'Moderation',
                 optional: true
             },
             {
@@ -153,6 +160,7 @@ class OpenAI_LLMs implements INode {
         const streaming = nodeData.inputs?.streaming as boolean
         const basePath = nodeData.inputs?.basepath as string
         const baseOptions = nodeData.inputs?.baseOptions
+        const moderationChecks = nodeData.inputs?.inputModeration as Moderation
 
         const credentialData = await getCredentialData(nodeData.credential ?? '', options)
         const openAIApiKey = getCredentialParam('openAIApiKey', credentialData, nodeData)
@@ -189,6 +197,14 @@ class OpenAI_LLMs implements INode {
             basePath,
             baseOptions: parsedBaseOptions
         })
+        if (moderationChecks) {
+            Object.defineProperty(model, 'moderation', {
+                enumerable: true,
+                configurable: true,
+                writable: true,
+                value: moderationChecks
+            })
+        }
         return model
     }
 }

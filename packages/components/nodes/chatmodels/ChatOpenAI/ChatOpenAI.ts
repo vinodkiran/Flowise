@@ -3,6 +3,7 @@ import { getBaseClasses, getCredentialData, getCredentialParam } from '../../../
 import { ChatOpenAI, OpenAIChatInput } from 'langchain/chat_models/openai'
 import { BaseCache } from 'langchain/schema'
 import { BaseLLMParams } from 'langchain/llms/base'
+import { Moderation } from '../../responsibleAI/Moderation'
 
 class ChatOpenAI_ChatModels implements INode {
     label: string
@@ -19,7 +20,7 @@ class ChatOpenAI_ChatModels implements INode {
     constructor() {
         this.label = 'ChatOpenAI'
         this.name = 'chatOpenAI'
-        this.version = 2.0
+        this.version = 3.0
         this.type = 'ChatOpenAI'
         this.icon = 'openai.png'
         this.category = 'Chat Models'
@@ -36,6 +37,12 @@ class ChatOpenAI_ChatModels implements INode {
                 label: 'Cache',
                 name: 'cache',
                 type: 'BaseCache',
+                optional: true
+            },
+            {
+                label: 'Input Moderation',
+                name: 'inputModeration',
+                type: 'Moderation',
                 optional: true
             },
             {
@@ -155,6 +162,7 @@ class ChatOpenAI_ChatModels implements INode {
         const streaming = nodeData.inputs?.streaming as boolean
         const basePath = nodeData.inputs?.basepath as string
         const baseOptions = nodeData.inputs?.baseOptions
+        const moderationChecks = nodeData.inputs?.inputModeration as Moderation
 
         const credentialData = await getCredentialData(nodeData.credential ?? '', options)
         const openAIApiKey = getCredentialParam('openAIApiKey', credentialData, nodeData)
@@ -188,6 +196,14 @@ class ChatOpenAI_ChatModels implements INode {
             basePath,
             baseOptions: parsedBaseOptions
         })
+        if (moderationChecks) {
+            Object.defineProperty(model, 'moderation', {
+                enumerable: true,
+                configurable: true,
+                writable: true,
+                value: moderationChecks
+            })
+        }
         return model
     }
 }

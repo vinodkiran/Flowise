@@ -1,12 +1,13 @@
 import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams } from '../../../src/Interface'
 import { getBaseClasses, handleEscapeCharacters } from '../../../src/utils'
 import { LLMChain } from 'langchain/chains'
+
 import { BaseLanguageModel } from 'langchain/base_language'
-import { ConsoleCallbackHandler, CustomChainHandler, additionalCallbacks } from '../../../src/handler'
-import { BaseOutputParser } from 'langchain/schema/output_parser'
+import { additionalCallbacks, ConsoleCallbackHandler, CustomChainHandler } from '../../../src/handler'
+import { BaseLLMOutputParser, BaseOutputParser } from 'langchain/schema/output_parser'
 import { formatResponse, injectOutputParser } from '../../outputparsers/OutputParserHelpers'
-import { BaseLLMOutputParser } from 'langchain/schema/output_parser'
 import { OutputFixingParser } from 'langchain/output_parsers'
+import { Moderation } from '../../responsibleAI/Moderation'
 
 class LLMChain_Chains implements INode {
     label: string
@@ -144,6 +145,15 @@ const runPrediction = async (
     const isStreaming = options.socketIO && options.socketIOClientId
     const socketIO = isStreaming ? options.socketIO : undefined
     const socketIOClientId = isStreaming ? options.socketIOClientId : ''
+
+    if ((chain.llm as any).moderation) {
+        const moderationChecks: Moderation = (chain.llm as any).moderation
+        try {
+            input = await moderationChecks.checkForViolations(chain.llm, input) // Use the output of the moderation chain as input for the LLM chain
+        } catch (e) {
+            return e.message
+        }
+    }
 
     /**
      * Apply string transformation to reverse converted special chars:
