@@ -3,7 +3,7 @@ import { getBaseClasses, getCredentialData, getCredentialParam } from '../../../
 import { ChatOpenAI, OpenAIChatInput } from 'langchain/chat_models/openai'
 import { BaseCache } from 'langchain/schema'
 import { BaseLLMParams } from 'langchain/llms/base'
-import { Moderation } from '../../responsibleAI/Moderation'
+import { Moderation } from '../../responsibleAI/ResponsibleAI'
 
 class ChatOpenAI_ChatModels implements INode {
     label: string
@@ -20,7 +20,7 @@ class ChatOpenAI_ChatModels implements INode {
     constructor() {
         this.label = 'ChatOpenAI'
         this.name = 'chatOpenAI'
-        this.version = 3.0
+        this.version = 2.0
         this.type = 'ChatOpenAI'
         this.icon = 'openai.png'
         this.category = 'Chat Models'
@@ -37,12 +37,6 @@ class ChatOpenAI_ChatModels implements INode {
                 label: 'Cache',
                 name: 'cache',
                 type: 'BaseCache',
-                optional: true
-            },
-            {
-                label: 'Input Moderation',
-                name: 'inputModeration',
-                type: 'Moderation',
                 optional: true
             },
             {

@@ -1,6 +1,6 @@
 import { INode, INodeData, INodeParams } from '../../../src/Interface'
 import { getBaseClasses } from '../../../src'
-import { Moderation } from '../Moderation'
+import { Moderation } from '../ResponsibleAI'
 import { OpenAIModerationRunner } from './OpenAIModerationRunner'
 
 class OpenAIModeration implements INode {
@@ -15,7 +15,7 @@ class OpenAIModeration implements INode {
     inputs: INodeParams[]
 
     constructor() {
-        this.label = 'Open AI moderation'
+        this.label = 'Moderation - Open AI'
         this.name = 'openAIModeration'
         this.version = 1.0
         this.type = 'Moderation'

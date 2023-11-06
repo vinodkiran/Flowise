@@ -3,7 +3,7 @@ import { getBaseClasses, getCredentialData, getCredentialParam } from '../../../
 import { OpenAI, OpenAIInput } from 'langchain/llms/openai'
 import { BaseLLMParams } from 'langchain/llms/base'
 import { BaseCache } from 'langchain/schema'
-import { Moderation } from '../../responsibleAI/Moderation'
+import { Moderation } from '../../responsibleAI/ResponsibleAI'
 
 class OpenAI_LLMs implements INode {
     label: string
@@ -20,7 +20,7 @@ class OpenAI_LLMs implements INode {
     constructor() {
         this.label = 'OpenAI'
         this.name = 'openAI'
-        this.version = 4.0
+        this.version = 3.0
         this.type = 'OpenAI'
         this.icon = 'openai.png'
         this.category = 'LLMs'
@@ -37,12 +37,6 @@ class OpenAI_LLMs implements INode {
                 label: 'Cache',
                 name: 'cache',
                 type: 'BaseCache',
-                optional: true
-            },
-            {
-                label: 'Input Moderation',
-                name: 'inputModeration',
-                type: 'Moderation',
                 optional: true
             },
             {

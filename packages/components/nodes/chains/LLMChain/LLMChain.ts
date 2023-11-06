@@ -7,7 +7,7 @@ import { additionalCallbacks, ConsoleCallbackHandler, CustomChainHandler } from 
 import { BaseLLMOutputParser, BaseOutputParser } from 'langchain/schema/output_parser'
 import { formatResponse, injectOutputParser } from '../../outputparsers/OutputParserHelpers'
 import { OutputFixingParser } from 'langchain/output_parsers'
-import { Moderation } from '../../responsibleAI/Moderation'
+import { SelfCritiqueRunner } from '../../responsibleAI/SelfCritique/SelfCritiqueRunner'
 
 class LLMChain_Chains implements INode {
     label: string
@@ -46,6 +46,12 @@ class LLMChain_Chains implements INode {
                 label: 'Output Parser',
                 name: 'outputParser',
                 type: 'BaseLLMOutputParser',
+                optional: true
+            },
+            {
+                label: 'ResponsibleAI',
+                name: 'responsibleAI',
+                type: 'ResponsibleAI',
                 optional: true
             },
             {
@@ -146,13 +152,16 @@ const runPrediction = async (
     const socketIO = isStreaming ? options.socketIO : undefined
     const socketIOClientId = isStreaming ? options.socketIOClientId : ''
 
-    if ((chain.llm as any).moderation) {
-        const moderationChecks: Moderation = (chain.llm as any).moderation
+    const selfCritiqueRunner = nodeData.inputs?.responsibleAI as SelfCritiqueRunner
+    if (selfCritiqueRunner) {
         try {
-            input = await moderationChecks.checkForViolations(chain.llm, input) // Use the output of the moderation chain as input for the LLM chain
+            // Use the output of the moderation chain as input for the LLM chain
+            input = await selfCritiqueRunner.checkInputs(chain.llm, input)
         } catch (e) {
-            return e.message
+            return formatResponse(e.message)
         }
+        // @ts-ignore
+        chain = selfCritiqueRunner.createConstitutionChain(chain)
     }
 
     /**
