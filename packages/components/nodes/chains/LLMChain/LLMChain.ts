@@ -8,6 +8,7 @@ import { BaseLLMOutputParser, BaseOutputParser } from 'langchain/schema/output_p
 import { formatResponse, injectOutputParser } from '../../outputparsers/OutputParserHelpers'
 import { OutputFixingParser } from 'langchain/output_parsers'
 import { SelfCritiqueRunner } from '../../responsibleAI/SelfCritique/SelfCritiqueRunner'
+import { Server } from 'socket.io'
 
 class LLMChain_Chains implements INode {
     label: string
@@ -137,6 +138,19 @@ class LLMChain_Chains implements INode {
     }
 }
 
+function streamResponse(isStreaming: any, response: string, socketIO: Server, socketIOClientId: string) {
+    if (isStreaming) {
+        const result = response.split(/(\s+)/)
+        result.forEach((token: string, index: number) => {
+            if (index === 0) {
+                socketIO.to(socketIOClientId).emit('start', token)
+            }
+            socketIO.to(socketIOClientId).emit('token', token)
+        })
+        socketIO.to(socketIOClientId).emit('end')
+    }
+}
+
 const runPrediction = async (
     inputVariables: string[],
     chain: LLMChain<string | object>,
@@ -152,24 +166,25 @@ const runPrediction = async (
     const socketIO = isStreaming ? options.socketIO : undefined
     const socketIOClientId = isStreaming ? options.socketIOClientId : ''
 
-    const selfCritiqueRunner = nodeData.inputs?.responsibleAI as SelfCritiqueRunner
-    if (selfCritiqueRunner) {
-        try {
-            // Use the output of the moderation chain as input for the LLM chain
-            input = await selfCritiqueRunner.checkInputs(chain.llm, input)
-        } catch (e) {
-            return formatResponse(e.message)
-        }
-        // @ts-ignore
-        chain = selfCritiqueRunner.createConstitutionChain(chain)
-    }
-
     /**
      * Apply string transformation to reverse converted special chars:
      * FROM: { "value": "hello i am benFLOWISE_NEWLINEFLOWISE_NEWLINEFLOWISE_TABhow are you?" }
      * TO: { "value": "hello i am ben\n\n\thow are you?" }
      */
     const promptValues = handleEscapeCharacters(promptValuesRaw, true)
+
+    const selfCritiqueRunner = nodeData.inputs?.responsibleAI as SelfCritiqueRunner
+    if (selfCritiqueRunner) {
+        try {
+            // Use the output of the moderation chain as input for the LLM chain
+            input = await selfCritiqueRunner.checkInputs(chain.llm, input)
+        } catch (e) {
+            streamResponse(isStreaming, e.message, socketIO, socketIOClientId)
+            return formatResponse(e.message)
+        }
+        // @ts-ignore
+        chain = selfCritiqueRunner.createConstitutionChain(chain)
+    }
 
     if (promptValues && inputVariables.length > 0) {
         let seen: string[] = []

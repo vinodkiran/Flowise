@@ -11,7 +11,7 @@ class BuiltIn_Harmful1 extends AbstractPrinciple implements INode {
             critiqueRequest: principle.critiqueRequest,
             revisionRequest: principle.revisionRequest
         })
-        this.label = 'Built In - Harmful 1'
+        this.label = 'X-Output Revision - Harmful 1'
         this.name = 'harmful1'
         this.version = 1.0
     }

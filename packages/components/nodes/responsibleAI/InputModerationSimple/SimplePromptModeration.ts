@@ -16,7 +16,7 @@ class SimplePromptModeration implements INode {
 
     constructor() {
         this.label = 'Moderation - Simple Prompt'
-        this.name = 'simplePromptModeration'
+        this.name = 'inputModerationSimple'
         this.version = 1.0
         this.type = 'Moderation'
         this.icon = 'simple_moderation.png'

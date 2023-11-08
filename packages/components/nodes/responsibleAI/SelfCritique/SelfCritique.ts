@@ -16,7 +16,7 @@ class SelfCritique implements INode {
     inputs: INodeParams[]
 
     constructor() {
-        this.label = 'Self Critique'
+        this.label = 'Responsible AI'
         this.name = 'selfCritique'
         this.version = 1.0
         this.type = 'ResponsibleAI'
@@ -27,15 +27,25 @@ class SelfCritique implements INode {
         this.inputs = [
             {
                 label: 'Input Moderation',
+                description: 'Detect text that could generate harmful output and prevent it from being sent to the language model',
                 name: 'inputModeration',
                 type: 'Moderation',
                 optional: true,
                 list: true
             },
             {
-                label: 'Principles',
+                label: 'Output Evaluation',
+                description: 'Validate generated output against a set of predefined standards or provide your own standards',
+                name: 'criteriaList',
+                type: 'OutputEvaluation',
+                optional: true,
+                list: true
+            },
+            {
+                label: 'Output Revisions',
+                description: 'Validate generated output against a set of predefined standards or provide your own standards',
                 name: 'principleList',
-                type: 'ConstitutionalPrinciple',
+                type: 'OutputRevision',
                 optional: true,
                 list: true
             }
@@ -46,7 +56,8 @@ class SelfCritique implements INode {
     async init(nodeData: INodeData): Promise<any> {
         const moderations = nodeData.inputs?.inputModeration as Moderation[]
         const principles = nodeData.inputs?.principleList as ConstitutionalPrinciple[]
-        return new SelfCritiqueRunner(moderations, principles)
+        const criteria = nodeData.inputs?.criteriaList as string[]
+        return new SelfCritiqueRunner(moderations, criteria, principles)
     }
 }
 

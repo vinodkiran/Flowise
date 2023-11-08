@@ -16,7 +16,7 @@ class OpenAIModeration implements INode {
 
     constructor() {
         this.label = 'Moderation - Open AI'
-        this.name = 'openAIModeration'
+        this.name = 'inputModerationOpenAI'
         this.version = 1.0
         this.type = 'Moderation'
         this.icon = 'moderation.png'

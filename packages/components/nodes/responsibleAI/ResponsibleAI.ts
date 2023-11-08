@@ -6,3 +6,5 @@ export abstract class ResponsibleAI {}
 export abstract class Moderation extends ResponsibleAI {
     abstract checkForViolations(llm: BaseLanguageModel, input: string): Promise<string>
 }
+
+export abstract class OutputEvaluationCritera extends ResponsibleAI {}

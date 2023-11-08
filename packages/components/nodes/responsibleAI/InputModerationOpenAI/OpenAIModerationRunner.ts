@@ -52,7 +52,7 @@ export class OpenAIModerationRunner implements Moderation {
                 throw Error(this.moderationErrorMessage)
             }
         }
-        return Promise.resolve(moderationOutput)
+        return moderationOutput
     }
 
     setParameter(category: string, value: number) {

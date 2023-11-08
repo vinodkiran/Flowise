@@ -1,27 +1,29 @@
 import { Moderation } from '../ResponsibleAI'
-import { ConstitutionalChain, ConstitutionalPrinciple, LLMChain } from 'langchain/chains'
+import { ConstitutionalPrinciple, LLMChain } from 'langchain/chains'
 import { BaseLanguageModel, BaseLanguageModelCallOptions } from 'langchain/base_language'
 
 export class SelfCritiqueRunner {
-    private moderations: Moderation[]
-    private principles: ConstitutionalPrinciple[]
+    private readonly inputModeration: Moderation[]
+    private readonly outputCriteria: string[]
+    private readonly outputRevision: ConstitutionalPrinciple[]
 
-    constructor(moderations: Moderation[], principles: ConstitutionalPrinciple[]) {
-        this.moderations = moderations
-        this.principles = principles
+    constructor(moderationList: Moderation[], criteriaList: string[], principleList: ConstitutionalPrinciple[]) {
+        this.inputModeration = moderationList
+        this.outputCriteria = criteriaList
+        this.outputRevision = principleList
     }
 
     public async checkInputs(llm: BaseLanguageModel, input: string): Promise<string> {
-        for (const moderation of this.moderations) {
+        for (const moderation of this.inputModeration) {
             input = await moderation.checkForViolations(llm, input)
         }
-        return Promise.resolve(input)
+        return input
     }
 
     public createConstitutionChain(chain: LLMChain<string, BaseLanguageModel<any, BaseLanguageModelCallOptions>>) {
-        return ConstitutionalChain.fromLLM(chain.llm, {
-            chain: chain,
-            constitutionalPrinciples: this.principles
-        })
+        if (this.outputCriteria.length === 0) {
+            return chain
+        }
+        return undefined
     }
 }
