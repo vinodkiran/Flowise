@@ -13,6 +13,7 @@ export interface OpenAIVisionChainInput extends ChainInputs {
     prompt?: BasePromptTemplate
     configuration?: ClientOptions
     imageUrl?: string
+    imageResolution?: string
 }
 
 /**
@@ -35,6 +36,7 @@ export class OpenAIVisionChain extends BaseChain implements OpenAIVisionChainInp
     inputKey = 'input'
     outputKey = 'text'
     imageUrl?: string
+    imageResolution: string = 'low'
     openAIApiKey?: string
     openAIOrganization?: string
 
@@ -45,6 +47,7 @@ export class OpenAIVisionChain extends BaseChain implements OpenAIVisionChainInp
     constructor(fields?: OpenAIVisionChainInput) {
         super(fields)
         this.throwError = fields?.throwError ?? false
+        this.imageResolution = fields?.imageResolution ?? 'low'
         this.openAIApiKey = fields?.openAIApiKey
         this.imageUrl = fields?.imageUrl
         if (!this.openAIApiKey) {
@@ -73,7 +76,8 @@ export class OpenAIVisionChain extends BaseChain implements OpenAIVisionChainInp
             payload.push({
                 type: 'image_url',
                 image_url: {
-                    url: this.imageUrl
+                    url: this.imageUrl,
+                    detail: this.imageResolution
                 }
             })
         }

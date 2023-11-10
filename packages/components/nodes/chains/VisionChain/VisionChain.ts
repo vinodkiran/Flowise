@@ -61,9 +61,9 @@ class VisionChain_Chains implements INode {
                 optional: false
             },
             {
-                label: 'Image Understanding',
-                description: 'Determines how the model processes the image and generates its textual understanding',
-                name: 'imageUnderstanding',
+                label: 'Image Resolution',
+                description: 'This parameter controls the resolution in which the model views the image.',
+                name: 'imageResolution',
                 type: 'options',
                 options: [
                     {
@@ -104,11 +104,13 @@ class VisionChain_Chains implements INode {
         const model = nodeData.inputs?.model as BaseLanguageModel
         const prompt = nodeData.inputs?.prompt
         const output = nodeData.outputs?.output as string
+        const imageResolution = nodeData.inputs?.imageResolution
         const promptValues = prompt.promptValues as ICommonObject
         if (output === this.name) {
             const chain = new OpenAIVisionChain({
                 openAIApiKey: (model as any).openAIApiKey,
                 prompt: prompt,
+                imageResolution: imageResolution,
                 verbose: process.env.DEBUG === 'true',
                 imageUrl: options.url
             })
@@ -116,6 +118,7 @@ class VisionChain_Chains implements INode {
         } else if (output === 'outputPrediction') {
             const chain = new OpenAIVisionChain({
                 openAIApiKey: (model as any).openAIApiKey,
+                imageResolution: imageResolution,
                 verbose: process.env.DEBUG === 'true',
                 imageUrl: options.url
             })
