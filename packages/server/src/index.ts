@@ -1422,6 +1422,7 @@ export class App {
 
             let result = isStreamValid
                 ? await nodeInstance.run(nodeToExecuteData, incomingInput.question, {
+                      url: incomingInput.url,
                       chatHistory: incomingInput.history,
                       socketIO,
                       socketIOClientId: incomingInput.socketIOClientId,
@@ -1432,6 +1433,7 @@ export class App {
                       chatId
                   })
                 : await nodeInstance.run(nodeToExecuteData, incomingInput.question, {
+                      url: incomingInput.url,
                       chatHistory: incomingInput.history,
                       logger,
                       appDataSource: this.AppDataSource,
