@@ -367,6 +367,19 @@ export class App {
             return res.json(results)
         })
 
+        // Check if chatflow valid for uploads
+        this.app.get('/api/v1/chatflows-uploads/:id', async (req: Request, res: Response) => {
+            const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
+                id: req.params.id
+            })
+            if (!chatflow) return res.status(404).send(`Chatflow ${req.params.id} not found`)
+
+            const obj = {
+                allowUploads: this.shouldAllowUploads(chatflow)
+            }
+            return res.json(obj)
+        })
+
         // Check if chatflow valid for streaming
         this.app.get('/api/v1/chatflows-streaming/:id', async (req: Request, res: Response) => {
             const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
@@ -1162,6 +1175,19 @@ export class App {
         })
     }
 
+    private uploadAllowedNodes = ['OpenAIVisionChain']
+    private shouldAllowUploads(result: ChatFlow): boolean {
+        const flowObj = JSON.parse(result.flowData)
+        let allowUploads = false
+        flowObj.nodes.forEach((node: IReactFlowNode) => {
+            if (this.uploadAllowedNodes.indexOf(node.data.type) > -1) {
+                logger.debug(`[server]: Found Eligible Node ${node.data.type}, Allowing Uploads.`)
+                allowUploads = true
+            }
+        })
+        return allowUploads
+    }
+
     /**
      * Validate API Key
      * @param {Request} req
@@ -1419,6 +1445,21 @@ export class App {
             if (nodeToExecuteData.instance) sessionId = checkMemorySessionId(nodeToExecuteData.instance, chatId)
 
             const memoryType = this.findMemoryLabel(nodes, edges)
+
+            if (incomingInput.url) {
+                // @ts-ignore
+                ;(incomingInput.url as any[]).forEach((url: any) => {
+                    if (url.type === 'file') {
+                        const splitDataURI = url.data.split(',')
+                        const filename = splitDataURI.pop()?.split(':')[1] ?? ''
+                        const bf = Buffer.from(splitDataURI.pop() || '', 'base64')
+                        const filePath = path.join(getUserHome(), '.flowise', 'vision-uploads', filename)
+                        if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, bf)
+                        fs.unlinkSync(filePath)
+                        url.data = bf.toString('base64')
+                    }
+                })
+            }
 
             let result = isStreamValid
                 ? await nodeInstance.run(nodeToExecuteData, incomingInput.question, {

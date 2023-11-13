@@ -1,125 +1,216 @@
-import { OpenAI as OpenAIClient, ClientOptions } from 'openai'
-import { BaseChain, ChainInputs } from 'langchain/chains'
-import { ChainValues } from 'langchain/schema'
-import { BasePromptTemplate } from 'langchain/prompts'
+import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams } from '../../../src/Interface'
+import { getBaseClasses, handleEscapeCharacters } from '../../../src/utils'
+import { VLLMChain } from './VLLMChain'
+import { BaseLanguageModel } from 'langchain/base_language'
+import { ConsoleCallbackHandler, CustomChainHandler, additionalCallbacks } from '../../../src/handler'
+import { formatResponse } from '../../outputparsers/OutputParserHelpers'
+import { ChatOpenAI } from 'langchain/chat_models/openai'
 
-/**
- * Interface for the input parameters of the OpenAIVisionChain class.
- */
-export interface OpenAIVisionChainInput extends ChainInputs {
-    openAIApiKey?: string
-    openAIOrganization?: string
-    throwError?: boolean
-    prompt?: BasePromptTemplate
-    configuration?: ClientOptions
-    imageUrl?: string
-    imageResolution?: string
+class OpenAIVisionChain_Chains implements INode {
+    label: string
+    name: string
+    version: number
+    type: string
+    icon: string
+    category: string
+    baseClasses: string[]
+    description: string
+    inputs: INodeParams[]
+    outputs: INodeOutputsValue[]
+
+    constructor() {
+        this.label = 'Open AI Vision Chain'
+        this.name = 'openAIVisionChain'
+        this.version = 3.0
+        this.type = 'OpenAIVisionChain'
+        this.icon = 'chain.svg'
+        this.category = 'Chains'
+        this.description = 'Chain to run queries against OpenAI (GPT-4) Vision .'
+        this.baseClasses = [this.type, ...getBaseClasses(VLLMChain)]
+        this.inputs = [
+            {
+                label: 'Language Model (Works only with Open AI [gpt-4-vision-preview])',
+                name: 'model',
+                type: 'BaseLanguageModel'
+            },
+            {
+                label: 'Prompt',
+                name: 'prompt',
+                type: 'BasePromptTemplate',
+                optional: true
+            },
+            {
+                label: 'Image Resolution',
+                description: 'This parameter controls the resolution in which the model views the image.',
+                name: 'imageResolution',
+                type: 'options',
+                options: [
+                    {
+                        label: 'Low',
+                        name: 'low'
+                    },
+                    {
+                        label: 'High',
+                        name: 'high'
+                    }
+                ],
+                default: 'low',
+                optional: false
+            },
+            {
+                label: 'Chain Name',
+                name: 'chainName',
+                type: 'string',
+                placeholder: 'Name Your Chain',
+                optional: true
+            }
+        ]
+        this.outputs = [
+            {
+                label: 'Open AI Vision Chain',
+                name: 'openAIVisionChain',
+                baseClasses: [this.type, ...getBaseClasses(VLLMChain)]
+            },
+            {
+                label: 'Output Prediction',
+                name: 'outputPrediction',
+                baseClasses: ['string', 'json']
+            }
+        ]
+    }
+
+    async init(nodeData: INodeData, input: string, options: ICommonObject): Promise<any> {
+        const model = nodeData.inputs?.model as BaseLanguageModel
+        const prompt = nodeData.inputs?.prompt
+        const output = nodeData.outputs?.output as string
+        const imageResolution = nodeData.inputs?.imageResolution
+        const promptValues = prompt.promptValues as ICommonObject
+        if (!(model as any).openAIApiKey || (model as any).modelName !== 'gpt-4-vision-preview') {
+            throw new Error('Chain works with OpenAI Vision model only')
+        }
+        const openAIModel = model as ChatOpenAI
+        const fields = {
+            openAIApiKey: openAIModel.openAIApiKey,
+            imageResolution: imageResolution,
+            verbose: process.env.DEBUG === 'true',
+            imageUrls: options.url,
+            openAIModel: openAIModel
+        }
+        if (output === this.name) {
+            const chain = new VLLMChain({
+                ...fields,
+                prompt: prompt
+            })
+            return chain
+        } else if (output === 'outputPrediction') {
+            const chain = new VLLMChain({
+                ...fields
+            })
+            const inputVariables: string[] = prompt.inputVariables as string[] // ["product"]
+            const res = await runPrediction(inputVariables, chain, input, promptValues, options, nodeData)
+            // eslint-disable-next-line no-console
+            console.log('\x1b[92m\x1b[1m\n*****OUTPUT PREDICTION*****\n\x1b[0m\x1b[0m')
+            // eslint-disable-next-line no-console
+            console.log(res)
+            /**
+             * Apply string transformation to convert special chars:
+             * FROM: hello i am ben\n\n\thow are you?
+             * TO: hello i am benFLOWISE_NEWLINEFLOWISE_NEWLINEFLOWISE_TABhow are you?
+             */
+            return handleEscapeCharacters(res, false)
+        }
+    }
+
+    async run(nodeData: INodeData, input: string, options: ICommonObject): Promise<string | object> {
+        const prompt = nodeData.inputs?.prompt
+        const inputVariables: string[] = prompt.inputVariables as string[] // ["product"]
+        const chain = nodeData.instance as VLLMChain
+        let promptValues: ICommonObject | undefined = nodeData.inputs?.prompt.promptValues as ICommonObject
+        const res = await runPrediction(inputVariables, chain, input, promptValues, options, nodeData)
+        // eslint-disable-next-line no-console
+        console.log('\x1b[93m\x1b[1m\n*****FINAL RESULT*****\n\x1b[0m\x1b[0m')
+        // eslint-disable-next-line no-console
+        console.log(res)
+        return res
+    }
 }
 
-/**
- * Class representing a chain for moderating text using the OpenAI
- * Moderation API. It extends the BaseChain class and implements the
- * OpenAIVisionChainInput interface.
- */
-export class OpenAIVisionChain extends BaseChain implements OpenAIVisionChainInput {
-    static lc_name() {
-        return 'OpenAIVisionChain'
+const runPrediction = async (
+    inputVariables: string[],
+    chain: VLLMChain,
+    input: string,
+    promptValuesRaw: ICommonObject | undefined,
+    options: ICommonObject,
+    nodeData: INodeData
+) => {
+    const loggerHandler = new ConsoleCallbackHandler(options.logger)
+    const callbacks = await additionalCallbacks(nodeData, options)
+
+    const isStreaming = options.socketIO && options.socketIOClientId
+    const socketIO = isStreaming ? options.socketIO : undefined
+    const socketIOClientId = isStreaming ? options.socketIOClientId : ''
+
+    /**
+     * Apply string transformation to reverse converted special chars:
+     * FROM: { "value": "hello i am benFLOWISE_NEWLINEFLOWISE_NEWLINEFLOWISE_TABhow are you?" }
+     * TO: { "value": "hello i am ben\n\n\thow are you?" }
+     */
+    const promptValues = handleEscapeCharacters(promptValuesRaw, true)
+    if (options?.url) {
+        chain.imageUrls = options.url
     }
+    if (promptValues && inputVariables.length > 0) {
+        let seen: string[] = []
 
-    get lc_secrets(): { [key: string]: string } | undefined {
-        return {
-            openAIApiKey: 'OPENAI_API_KEY'
-        }
-    }
-    prompt: BasePromptTemplate
-
-    inputKey = 'input'
-    outputKey = 'text'
-    imageUrl?: string
-    imageResolution: string = 'low'
-    openAIApiKey?: string
-    openAIOrganization?: string
-
-    clientConfig: ClientOptions
-    client: OpenAIClient
-    throwError: boolean
-
-    constructor(fields?: OpenAIVisionChainInput) {
-        super(fields)
-        this.throwError = fields?.throwError ?? false
-        this.imageResolution = fields?.imageResolution ?? 'low'
-        this.openAIApiKey = fields?.openAIApiKey
-        this.imageUrl = fields?.imageUrl
-        if (!this.openAIApiKey) {
-            throw new Error('OpenAI API key not found')
-        }
-
-        this.openAIOrganization = fields?.openAIOrganization
-
-        this.clientConfig = {
-            ...fields?.configuration,
-            apiKey: this.openAIApiKey,
-            organization: this.openAIOrganization
-        }
-
-        this.client = new OpenAIClient(this.clientConfig)
-    }
-
-    async _call(values: ChainValues): Promise<ChainValues> {
-        const userInput = values[this.inputKey]
-        const payload = []
-        payload.push({
-            type: 'text',
-            text: userInput
-        })
-        if (this.imageUrl) {
-            payload.push({
-                type: 'image_url',
-                image_url: {
-                    url: this.imageUrl,
-                    detail: this.imageResolution
-                }
-            })
-        }
-        // 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Charminar_Hyderabad_1.jpg/725px-Charminar_Hyderabad_1.jpg'
-        const visionRequest = {
-            model: 'gpt-4-vision-preview',
-            max_tokens: 300,
-            messages: [
-                {
-                    role: 'user',
-                    content: payload
-                }
-            ]
-        }
-        // eslint-disable-next-line no-console
-        console.log(JSON.stringify(visionRequest, null, 2))
-        let response
-        try {
-            // @ts-ignore
-            response = await this.client.chat.completions.create(visionRequest)
-        } catch (error) {
-            if (error instanceof Error) {
-                throw error
-            } else {
-                throw new Error(error as string)
+        for (const variable of inputVariables) {
+            seen.push(variable)
+            if (promptValues[variable]) {
+                chain.inputKey = variable
+                seen.pop()
             }
         }
-        const output = response.choices[0]
-        return {
-            [this.outputKey]: output.message.content
+
+        if (seen.length === 0) {
+            // All inputVariables have fixed values specified
+            const options = { ...promptValues }
+            if (isStreaming) {
+                const handler = new CustomChainHandler(socketIO, socketIOClientId)
+                const res = await chain.call(options, [loggerHandler, handler, ...callbacks])
+                return formatResponse(res?.text)
+            } else {
+                const res = await chain.call(options, [loggerHandler, ...callbacks])
+                return formatResponse(res?.text)
+            }
+        } else if (seen.length === 1) {
+            // If one inputVariable is not specify, use input (user's question) as value
+            const lastValue = seen.pop()
+            if (!lastValue) throw new Error('Please provide Prompt Values')
+            chain.inputKey = lastValue as string
+            const options = {
+                ...promptValues,
+                [lastValue]: input
+            }
+            if (isStreaming) {
+                const handler = new CustomChainHandler(socketIO, socketIOClientId)
+                const res = await chain.call(options, [loggerHandler, handler, ...callbacks])
+                return formatResponse(res?.text)
+            } else {
+                const res = await chain.call(options, [loggerHandler, ...callbacks])
+                return formatResponse(res?.text)
+            }
+        } else {
+            throw new Error(`Please provide Prompt Values for: ${seen.join(', ')}`)
+        }
+    } else {
+        if (isStreaming) {
+            const handler = new CustomChainHandler(socketIO, socketIOClientId)
+            const res = await chain.run(input, [loggerHandler, handler, ...callbacks])
+            return formatResponse(res)
+        } else {
+            const res = await chain.run(input, [loggerHandler, ...callbacks])
+            return formatResponse(res)
         }
     }
-
-    _chainType() {
-        return 'vision_chain'
-    }
-
-    get inputKeys() {
-        return this.prompt.inputVariables
-    }
-
-    get outputKeys(): string[] {
-        return [this.outputKey]
-    }
 }
+
+module.exports = { nodeClass: OpenAIVisionChain_Chains }

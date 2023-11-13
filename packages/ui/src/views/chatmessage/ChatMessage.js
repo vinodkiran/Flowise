@@ -8,7 +8,20 @@ import rehypeRaw from 'rehype-raw'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 
-import { CircularProgress, OutlinedInput, Divider, InputAdornment, IconButton, Box, Chip, Grid, Card, CardMedia } from '@mui/material'
+import {
+    CircularProgress,
+    OutlinedInput,
+    Divider,
+    InputAdornment,
+    IconButton,
+    Box,
+    Chip,
+    Grid,
+    Card,
+    Button,
+    CardMedia,
+    CardActions
+} from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { IconSend, IconUpload } from '@tabler/icons'
 
@@ -35,6 +48,7 @@ import FileUploadDialog from '../upload/FileUploadDialog'
 import robotPNG from 'assets/images/robot.png'
 import userPNG from 'assets/images/account.png'
 import { isValidURL, removeDuplicateURL } from 'utils/genericHelper'
+import DeleteIcon from '@mui/icons-material/Delete'
 
 export const ChatMessage = ({ open, chatflowid, isDialog }) => {
     const theme = useTheme()
@@ -60,39 +74,41 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
     const getChatmessageApi = useApi(chatmessageApi.getInternalChatmessageFromChatflow)
     const getIsChatflowStreamingApi = useApi(chatflowsApi.getIsChatflowStreaming)
 
+    const getAllowChatFlowUploads = useApi(chatflowsApi.getAllowChatflowUploads)
+    const [isChatFlowAvailableForUploads, setIsChatFlowAvailableForUploads] = useState(false)
+
     const [isUploadDialogOpen, setUploadDialogOpen] = useState(false)
-    const [filePreviews, setFilePreviews] = useState([])
-    const [files, setFiles] = useState([])
-    const [url, setUrl] = useState('')
+    const [dialogPosition, setDialogPosition] = useState({ top: 0, left: 0 })
+    const buttonRef = useRef(null)
+    const [previews, setPreviews] = useState([])
     const handleOpenUploadDialog = () => {
+        if (buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect()
+            setDialogPosition({
+                top: rect.top - 100 - window.scrollY, // Adjust for scrolling
+                left: rect.left - window.scrollX
+            })
+        }
         setUploadDialogOpen(true)
     }
-    const handleCloseUploadDialog = (confirm, url, files) => {
+    const scrollToBottom = () => {
+        if (ps.current) {
+            ps.current.scrollTo({ top: maxScroll })
+        }
+    }
+    const handleCloseUploadDialog = (confirm, previews) => {
         setUploadDialogOpen(false)
         if (confirm) {
             clearPreviews()
-            if (url) {
-                setUrl(url)
-                setFiles([])
-                setFilePreviews([
-                    {
-                        url: url,
-                        preview: url
-                    }
-                ])
-            } else {
-                setFiles(files)
-                setFilePreviews(
-                    files.map((file) =>
-                        Object.assign(file, {
-                            preview: URL.createObjectURL(file)
-                        })
-                    )
-                )
-            }
+            setPreviews(previews)
         }
     }
-
+    const handleDeletePreview = (itemToDelete) => {
+        if (itemToDelete.type === 'file') {
+            URL.revokeObjectURL(itemToDelete.preview) // Clean up for file
+        }
+        setPreviews(previews.filter((item) => item !== itemToDelete))
+    }
     const previewStyle = {
         width: '64px',
         height: '64px',
@@ -110,12 +126,6 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
 
     const onURLClick = (data) => {
         window.open(data, '_blank')
-    }
-
-    const scrollToBottom = () => {
-        if (ps.current) {
-            ps.current.scrollTo({ top: maxScroll })
-        }
     }
 
     const onChange = useCallback((e) => setUserInput(e.target.value), [setUserInput])
@@ -151,8 +161,8 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
 
     const clearPreviews = () => {
         // Revoke the data uris to avoid memory leaks
-        filePreviews.forEach((file) => URL.revokeObjectURL(file.preview))
-        setFilePreviews([])
+        previews.forEach((file) => URL.revokeObjectURL(file.preview))
+        setPreviews([])
     }
 
     // Handle form submission
@@ -164,9 +174,15 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
         }
 
         setLoading(true)
-        setMessages((prevMessages) => [...prevMessages, { message: userInput, type: 'userMessage', url: url }])
-
+        const urls = []
+        previews.map((item) => {
+            urls.push({
+                data: item.data,
+                type: item.type
+            })
+        })
         clearPreviews()
+        setMessages((prevMessages) => [...prevMessages, { message: userInput, type: 'userMessage', url: urls }])
 
         // Send user question and history to API
         try {
@@ -175,8 +191,8 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
                 history: messages.filter((msg) => msg.message !== 'Hi there! How can I help?'),
                 chatId
             }
-            if (url) params.url = url
-            if (files) params.files = files
+            if (urls) params.url = urls
+            //if (files) params.files = files
             if (isChatFlowAvailableToStream) params.socketIOClientId = socketIOClientId
 
             const response = await predictionApi.sendMessageAndGetPrediction(chatflowid, params)
@@ -247,6 +263,14 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [getChatmessageApi.data])
 
+    // Get chatflow uploads capability
+    useEffect(() => {
+        if (getAllowChatFlowUploads.data) {
+            setIsChatFlowAvailableForUploads(getAllowChatFlowUploads.data?.allowUploads ?? false)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [getAllowChatFlowUploads.data])
+
     // Get chatflow streaming capability
     useEffect(() => {
         if (getIsChatflowStreamingApi.data) {
@@ -274,6 +298,7 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
         if (open && chatflowid) {
             getChatmessageApi.request(chatflowid)
             getIsChatflowStreamingApi.request(chatflowid)
+            getAllowChatFlowUploads.request(chatflowid)
             scrollToBottom()
 
             socket = socketIOClient(baseURL)
@@ -341,16 +366,6 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
                                             <img src={userPNG} alt='Me' width='30' height='30' className='usericon' />
                                         )}
                                         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                                            {message.url && (
-                                                <Card>
-                                                    <CardMedia
-                                                        component='img'
-                                                        image={message.url}
-                                                        alt={'preview'}
-                                                        style={messageImageStyle}
-                                                    />
-                                                </Card>
-                                            )}
                                             {message.usedTools && (
                                                 <div style={{ display: 'block', flexDirection: 'row', width: '100%' }}>
                                                     {message.usedTools.map((tool, index) => {
@@ -397,6 +412,20 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
                                                     {message.message}
                                                 </MemoizedReactMarkdown>
                                             </div>
+                                            {message.url &&
+                                                message.url.map((item, index) => {
+                                                    return (
+                                                        <Card key={index} sx={{ maxWidth: 128, margin: 5 }}>
+                                                            <CardMedia
+                                                                component='img'
+                                                                image={item.data}
+                                                                sx={{ height: 64 }}
+                                                                alt={'preview'}
+                                                                style={messageImageStyle}
+                                                            />
+                                                        </Card>
+                                                    )
+                                                })}
                                             {message.sourceDocuments && (
                                                 <div style={{ display: 'block', flexDirection: 'row', width: '100%' }}>
                                                     {removeDuplicateURL(message).map((source, index) => {
@@ -433,6 +462,31 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
             </div>
             <Divider />
             <div className='center'>
+                {previews && previews.length > 0 && (
+                    <Grid container spacing={2} style={{ marginTop: '5px' }}>
+                        {previews.map((item, index) => (
+                            <Grid item xs={12} sm={6} md={3} key={index}>
+                                <Card variant='outlined' sx={{ maxWidth: 64 }}>
+                                    <CardMedia
+                                        component='img'
+                                        image={item.preview}
+                                        sx={{ height: 64 }}
+                                        alt={`preview ${index}`}
+                                        style={previewStyle}
+                                    />
+                                    <CardActions sx={{ padding: 0, margin: 0 }}>
+                                        <Button
+                                            startIcon={<DeleteIcon />}
+                                            onClick={() => handleDeletePreview(item)}
+                                            size='small'
+                                            variant='text'
+                                        />
+                                    </CardActions>
+                                </Card>
+                            </Grid>
+                        ))}
+                    </Grid>
+                )}
                 <div style={{ width: '100%' }}>
                     <form style={{ width: '100%' }} onSubmit={handleSubmit}>
                         <OutlinedInput
@@ -450,18 +504,21 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
                             multiline={true}
                             maxRows={isDialog ? 7 : 2}
                             startAdornment={
-                                <InputAdornment position='start' sx={{ padding: '15px' }}>
-                                    <IconButton
-                                        type='button'
-                                        disabled={loading || !chatflowid}
-                                        edge='start'
-                                        onClick={handleOpenUploadDialog}
-                                    >
-                                        <IconUpload
-                                            color={loading || !chatflowid ? '#9e9e9e' : customization.isDarkMode ? 'white' : '#1e88e5'}
-                                        />
-                                    </IconButton>
-                                </InputAdornment>
+                                isChatFlowAvailableForUploads && (
+                                    <InputAdornment position='start' sx={{ padding: '15px' }}>
+                                        <IconButton
+                                            ref={buttonRef}
+                                            type='button'
+                                            disabled={loading || !chatflowid}
+                                            edge='start'
+                                            onClick={handleOpenUploadDialog}
+                                        >
+                                            <IconUpload
+                                                color={loading || !chatflowid ? '#9e9e9e' : customization.isDarkMode ? 'white' : '#1e88e5'}
+                                            />
+                                        </IconButton>
+                                    </InputAdornment>
+                                )
                             }
                             endAdornment={
                                 <InputAdornment position='end' sx={{ padding: '15px' }}>
@@ -480,20 +537,11 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
                                 </InputAdornment>
                             }
                         />
-                        <Grid container spacing={2} style={{ marginTop: '16px' }}>
-                            {filePreviews.map((file, index) => (
-                                <Grid item xs={6} key={index}>
-                                    <Card>
-                                        <CardMedia component='img' image={file.preview} alt={`preview ${index}`} style={previewStyle} />
-                                    </Card>
-                                </Grid>
-                            ))}
-                        </Grid>
                     </form>
                 </div>
             </div>
             <SourceDocDialog show={sourceDialogOpen} dialogProps={sourceDialogProps} onCancel={() => setSourceDialogOpen(false)} />
-            <FileUploadDialog open={isUploadDialogOpen} onClose={handleCloseUploadDialog} />
+            <FileUploadDialog open={isUploadDialogOpen} onClose={handleCloseUploadDialog} position={dialogPosition} />
         </>
     )
 }
