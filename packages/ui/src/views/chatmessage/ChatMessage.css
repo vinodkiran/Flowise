@@ -137,10 +137,32 @@
 
 .cloud-message {
     width: 100%;
-    height: calc(100vh - 260px);
+    height: calc(95vh - 260px);
     overflow-y: scroll;
     border-radius: 0.5rem;
     display: flex;
     justify-content: center;
     align-items: center;
 }
+
+.file-drop-field {
+    position: relative; /* Needed to position the icon correctly */
+    /* Other styling for the field */
+}
+
+.file-drop-field.drag-over {
+    /* Styling for when a file is dragged over, like a border or background change */
+    border: 2px dashed #0094ff; /* Example style */
+}
+
+.file-drop-field.drag-over input {
+    opacity: 0.5; /* Dim the text field to highlight the icon */
+}
+
+.file-drop-field .FaFileUpload {
+    position: absolute; /* Position the icon inside the field */
+    top: 50%; /* Align vertically */
+    left: 50%; /* Align horizontally */
+    transform: translate(-50%, -50%); /* Center the icon */
+}
+

@@ -81,6 +81,66 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
     const [dialogPosition, setDialogPosition] = useState({ top: 0, left: 0 })
     const buttonRef = useRef(null)
     const [previews, setPreviews] = useState([])
+    const [isDragOver, setIsDragOver] = useState(false)
+    const handleDragOver = (e) => {
+        if (isChatFlowAvailableForUploads) {
+            e.preventDefault() // Necessary to allow the drop
+        }
+    }
+    const handleDrop = async (e) => {
+        if (!isChatFlowAvailableForUploads) {
+            return
+        }
+        e.preventDefault()
+
+        let files = []
+        for (const file of e.dataTransfer.files) {
+            const reader = new FileReader()
+            const { name } = file
+
+            files.push(
+                new Promise((resolve) => {
+                    reader.onload = (evt) => {
+                        if (!evt?.target?.result) {
+                            return
+                        }
+                        const { result } = evt.target
+                        const data = result + `,filename:${name}`
+                        resolve({
+                            data: data,
+                            preview: URL.createObjectURL(file),
+                            type: 'file'
+                        })
+                    }
+                    reader.readAsDataURL(file)
+                })
+            )
+        }
+
+        const newFiles = await Promise.all(files)
+        //
+        // const newFiles = acceptedFiles.map((file) => ({
+        //     data: file,
+        //     preview: URL.createObjectURL(file),
+        //     type: 'file'
+        // }))
+        //setFiles((prevFiles) => [...prevFiles, ...newFiles])
+        setPreviews((prevPreviews) => [...prevPreviews, ...newFiles])
+    }
+
+    const handleDragEnter = (e) => {
+        if (isChatFlowAvailableForUploads) {
+            e.preventDefault()
+            setIsDragOver(true)
+        }
+    }
+
+    const handleDragLeave = (e) => {
+        if (isChatFlowAvailableForUploads) {
+            setIsDragOver(false) // Set the drag over state to false when the drag leaves
+        }
+    }
+
     const handleOpenUploadDialog = () => {
         if (buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect()
@@ -489,54 +549,66 @@ export const ChatMessage = ({ open, chatflowid, isDialog }) => {
                 )}
                 <div style={{ width: '100%' }}>
                     <form style={{ width: '100%' }} onSubmit={handleSubmit}>
-                        <OutlinedInput
-                            inputRef={inputRef}
-                            // eslint-disable-next-line
+                        <div
+                            onDragOver={handleDragOver}
+                            onDragEnter={handleDragEnter}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            className={`file-drop-field ${isDragOver ? 'drag-over' : ''}`}
+                        >
+                            <OutlinedInput
+                                inputRef={inputRef}
+                                // eslint-disable-next-line
                             autoFocus
-                            sx={{ width: '100%' }}
-                            disabled={loading || !chatflowid}
-                            onKeyDown={handleEnter}
-                            id='userInput'
-                            name='userInput'
-                            placeholder={loading ? 'Waiting for response...' : 'Type your question...'}
-                            value={userInput}
-                            onChange={onChange}
-                            multiline={true}
-                            maxRows={isDialog ? 7 : 2}
-                            startAdornment={
-                                isChatFlowAvailableForUploads && (
-                                    <InputAdornment position='start' sx={{ padding: '15px' }}>
-                                        <IconButton
-                                            ref={buttonRef}
-                                            type='button'
-                                            disabled={loading || !chatflowid}
-                                            edge='start'
-                                            onClick={handleOpenUploadDialog}
-                                        >
-                                            <IconUpload
-                                                color={loading || !chatflowid ? '#9e9e9e' : customization.isDarkMode ? 'white' : '#1e88e5'}
-                                            />
+                                sx={{ width: '100%' }}
+                                disabled={loading || !chatflowid}
+                                onKeyDown={handleEnter}
+                                id='userInput'
+                                name='userInput'
+                                placeholder={loading ? 'Waiting for response...' : 'Type your question...'}
+                                value={userInput}
+                                onChange={onChange}
+                                multiline={true}
+                                maxRows={isDialog ? 7 : 2}
+                                startAdornment={
+                                    isChatFlowAvailableForUploads && (
+                                        <InputAdornment position='start' sx={{ padding: '15px' }}>
+                                            <IconButton
+                                                ref={buttonRef}
+                                                type='button'
+                                                disabled={loading || !chatflowid}
+                                                edge='start'
+                                                onClick={handleOpenUploadDialog}
+                                            >
+                                                <IconUpload
+                                                    color={
+                                                        loading || !chatflowid ? '#9e9e9e' : customization.isDarkMode ? 'white' : '#1e88e5'
+                                                    }
+                                                />
+                                            </IconButton>
+                                        </InputAdornment>
+                                    )
+                                }
+                                endAdornment={
+                                    <InputAdornment position='end' sx={{ padding: '15px' }}>
+                                        <IconButton type='submit' disabled={loading || !chatflowid} edge='end'>
+                                            {loading ? (
+                                                <div>
+                                                    <CircularProgress color='inherit' size={20} />
+                                                </div>
+                                            ) : (
+                                                // Send icon SVG in input field
+                                                <IconSend
+                                                    color={
+                                                        loading || !chatflowid ? '#9e9e9e' : customization.isDarkMode ? 'white' : '#1e88e5'
+                                                    }
+                                                />
+                                            )}
                                         </IconButton>
                                     </InputAdornment>
-                                )
-                            }
-                            endAdornment={
-                                <InputAdornment position='end' sx={{ padding: '15px' }}>
-                                    <IconButton type='submit' disabled={loading || !chatflowid} edge='end'>
-                                        {loading ? (
-                                            <div>
-                                                <CircularProgress color='inherit' size={20} />
-                                            </div>
-                                        ) : (
-                                            // Send icon SVG in input field
-                                            <IconSend
-                                                color={loading || !chatflowid ? '#9e9e9e' : customization.isDarkMode ? 'white' : '#1e88e5'}
-                                            />
-                                        )}
-                                    </IconButton>
-                                </InputAdornment>
-                            }
-                        />
+                                }
+                            />
+                        </div>
                     </form>
                 </div>
             </div>
