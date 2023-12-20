@@ -1,8 +1,8 @@
 // assets
-import { IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot } from '@tabler/icons'
+import { IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot, IconDeviceGamepad2 } from '@tabler/icons'
 
 // constant
-const icons = { IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot }
+const icons = { IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot, IconDeviceGamepad2 }
 
 // ==============================|| DASHBOARD MENU ITEMS ||============================== //
 
@@ -57,6 +57,14 @@ const dashboard = {
             type: 'item',
             url: '/apikey',
             icon: icons.IconKey,
+            breadcrumbs: true
+        },
+        {
+            id: 'playground',
+            title: 'Playground',
+            type: 'item',
+            url: '/playground',
+            icon: icons.IconDeviceGamepad2,
             breadcrumbs: true
         }
     ]

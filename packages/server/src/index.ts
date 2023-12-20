@@ -55,7 +55,7 @@ import { Tool } from './database/entities/Tool'
 import { Assistant } from './database/entities/Assistant'
 import { ChatflowPool } from './ChatflowPool'
 import { CachePool } from './CachePool'
-import { ICommonObject, IMessage, INodeOptionsValue } from 'flowise-components'
+import { Playground, ICommonObject, IMessage, INodeOptionsValue } from 'flowise-components'
 import { createRateLimiter, getRateLimiter, initializeRateLimiter } from './utils/rateLimit'
 import { addAPIKey, compareKeys, deleteAPIKey, getApiKey, getAPIKeys, updateAPIKey } from './utils/apiKey'
 import { sanitizeMiddleware } from './utils/XSS'
@@ -1226,6 +1226,17 @@ export class App {
                 const apiKey = await getApiKey(req.params.apiKey)
                 if (!apiKey) return res.status(401).send('Unauthorized')
                 return res.status(200).send('OK')
+            } catch (err: any) {
+                return res.status(500).send(err?.message)
+            }
+        })
+
+        // Playground
+        this.app.post('/api/v1/playground/splits', async (req: Request, res: Response) => {
+            try {
+                const component = new Playground()
+                const chunksWithMetrics = await component.splitChunks(req.body)
+                return res.status(200).send(chunksWithMetrics)
             } catch (err: any) {
                 return res.status(500).send(err?.message)
             }
