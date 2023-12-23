@@ -23,6 +23,7 @@ import {
     convertChatHistoryToText,
     getInputVariables,
     handleEscapeCharacters,
+    getEncryptionKeyPath,
     ICommonObject,
     IDatabaseEntity,
     IMessage
@@ -855,16 +856,6 @@ export const isFlowValidForStream = (reactFlowNodes: IReactFlowNode[], endingNod
 }
 
 /**
- * Returns the path of encryption key
- * @returns {string}
- */
-export const getEncryptionKeyPath = (): string => {
-    return process.env.SECRETKEY_PATH
-        ? path.join(process.env.SECRETKEY_PATH, 'encryption.key')
-        : path.join(__dirname, '..', '..', 'encryption.key')
-}
-
-/**
  * Generate an encryption key
  * @returns {string}
  */
@@ -884,7 +875,8 @@ export const getEncryptionKey = async (): Promise<string> => {
         return await fs.promises.readFile(getEncryptionKeyPath(), 'utf8')
     } catch (error) {
         const encryptKey = generateEncryptKey()
-        await fs.promises.writeFile(getEncryptionKeyPath(), encryptKey)
+        const defaultLocation = path.join(getUserHome(), '.flowise', 'encryption.key')
+        await fs.promises.writeFile(defaultLocation, encryptKey)
         return encryptKey
     }
 }
