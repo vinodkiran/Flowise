@@ -8,7 +8,7 @@ import { useTheme } from '@mui/material/styles'
 import { Avatar, Box, ButtonBase, Typography, Stack, TextField } from '@mui/material'
 
 // icons
-import { IconSettings, IconChevronLeft, IconDeviceFloppy, IconPencil, IconCheck, IconX, IconCode } from '@tabler/icons'
+import { IconSettings, IconChevronLeft, IconDeviceFloppy, IconPencil, IconCheck, IconX, IconCode, IconChecks } from '@tabler/icons'
 
 // project imports
 import Settings from 'views/settings'
@@ -28,6 +28,7 @@ import useApi from 'hooks/useApi'
 import { generateExportFlowData } from 'utils/genericHelper'
 import { uiBaseURL } from 'store/constant'
 import { SET_CHATFLOW } from 'store/actions'
+import ChatflowValidationMessageDialog from '../../ui-component/dialog/ChatflowValidationMessageDialog'
 
 // ==============================|| CANVAS HEADER ||============================== //
 
@@ -37,6 +38,9 @@ const CanvasHeader = ({ chatflow, handleSaveFlow, handleDeleteFlow, handleLoadFl
     const navigate = useNavigate()
     const flowNameRef = useRef()
     const settingsRef = useRef()
+
+    const [flowValidationDialogOpen, setFlowValidationDialogOpen] = useState(false)
+    const [validationMessages, setValidationMessages] = useState({})
 
     const [isEditingFlowName, setEditingFlowName] = useState(null)
     const [flowName, setFlowName] = useState('')
@@ -52,6 +56,7 @@ const CanvasHeader = ({ chatflow, handleSaveFlow, handleDeleteFlow, handleLoadFl
     const [viewMessagesDialogProps, setViewMessagesDialogProps] = useState({})
 
     const updateChatflowApi = useApi(chatflowsApi.updateChatflow)
+    const validateChatflow = useApi(chatflowsApi.validateChatflow)
     const canvas = useSelector((state) => state.canvas)
 
     const onSettingsItemClick = (setting) => {
@@ -116,6 +121,12 @@ const CanvasHeader = ({ chatflow, handleSaveFlow, handleDeleteFlow, handleLoadFl
         }
     }
 
+    const onValidateClick = () => {
+        if (chatflow.id) {
+            validateChatflow.request(chatflow.id)
+        }
+    }
+
     const onAPIDialogClick = () => {
         // If file type is file, isFormDataRequired = true
         let isFormDataRequired = false
@@ -176,6 +187,14 @@ const CanvasHeader = ({ chatflow, handleSaveFlow, handleDeleteFlow, handleLoadFl
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [updateChatflowApi.data])
+
+    useEffect(() => {
+        if (validateChatflow.data) {
+            setValidationMessages(validateChatflow.data)
+            setFlowValidationDialogOpen(true)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [validateChatflow.data])
 
     useEffect(() => {
         if (chatflow) {
@@ -303,6 +322,28 @@ const CanvasHeader = ({ chatflow, handleSaveFlow, handleDeleteFlow, handleLoadFl
                 )}
             </Box>
             <Box>
+                {chatflow?.id && !canvas.isDirty && (
+                    <ButtonBase title='Validate Chatflow' sx={{ borderRadius: '50%', mr: 2 }}>
+                        <Avatar
+                            variant='rounded'
+                            sx={{
+                                ...theme.typography.commonAvatar,
+                                ...theme.typography.mediumAvatar,
+                                transition: 'all .2s ease-in-out',
+                                background: theme.palette.canvasHeader.checkLight,
+                                color: theme.palette.canvasHeader.checkDark,
+                                '&:hover': {
+                                    background: theme.palette.canvasHeader.checkDark,
+                                    color: theme.palette.canvasHeader.checkLight
+                                }
+                            }}
+                            color='inherit'
+                            onClick={onValidateClick}
+                        >
+                            <IconChecks stroke={1.5} size='1.3rem' />
+                        </Avatar>
+                    </ButtonBase>
+                )}
                 {chatflow?.id && (
                     <ButtonBase title='API Endpoint' sx={{ borderRadius: '50%', mr: 2 }}>
                         <Avatar
@@ -384,6 +425,15 @@ const CanvasHeader = ({ chatflow, handleSaveFlow, handleDeleteFlow, handleLoadFl
                 onConfirm={onConfirmSaveName}
             />
             <APICodeDialog show={apiDialogOpen} dialogProps={apiDialogProps} onCancel={() => setAPIDialogOpen(false)} />
+            <ChatflowValidationMessageDialog
+                show={flowValidationDialogOpen}
+                dialogProps={{
+                    title: `Save New Chatflow`,
+                    confirmButtonName: 'Save',
+                    cancelButtonName: 'Cancel'
+                }}
+                onClose={() => setFlowValidationDialogOpen(false)}
+            />
             <AnalyseFlowDialog show={analyseDialogOpen} dialogProps={analyseDialogProps} onCancel={() => setAnalyseDialogOpen(false)} />
             <StarterPromptsDialog
                 show={conversationStartersDialogOpen}

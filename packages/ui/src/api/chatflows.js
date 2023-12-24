@@ -13,6 +13,7 @@ const updateChatflow = (id, body) => client.put(`/chatflows/${id}`, body)
 const deleteChatflow = (id) => client.delete(`/chatflows/${id}`)
 
 const getIsChatflowStreaming = (id) => client.get(`/chatflows-streaming/${id}`)
+const validateChatflow = (id) => client.get(`/chatflows-validate/${id}`)
 
 export default {
     getAllChatflows,
@@ -21,5 +22,6 @@ export default {
     createNewChatflow,
     updateChatflow,
     deleteChatflow,
-    getIsChatflowStreaming
+    getIsChatflowStreaming,
+    validateChatflow
 }

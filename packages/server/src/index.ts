@@ -65,6 +65,7 @@ import { sanitizeMiddleware } from './utils/XSS'
 import axios from 'axios'
 import { Client } from 'langchainhub'
 import { parsePrompt } from './utils/hub'
+import { validateChatFlow } from './utils/chatflowValidation'
 
 export class App {
     app: express.Application
@@ -419,6 +420,18 @@ export class App {
         this.app.delete('/api/v1/chatflows/:id', async (req: Request, res: Response) => {
             const results = await this.AppDataSource.getRepository(ChatFlow).delete({ id: req.params.id })
             return res.json(results)
+        })
+
+        // Check if chatflow is valid
+        this.app.get('/api/v1/chatflows-validate/:id', async (req: Request, res: Response) => {
+            const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
+                id: req.params.id
+            })
+            if (!chatflow) return res.status(404).send(`Chatflow ${req.params.id} not found`)
+            const validationMessages = validateChatFlow(chatflow)
+            return res.json({
+                data: validationMessages
+            })
         })
 
         // Check if chatflow valid for streaming

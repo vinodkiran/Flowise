@@ -90,6 +90,8 @@ export default function themePalette(theme) {
             main: theme.customization.isDarkMode ? theme.colors?.darkLevel2 : theme.colors?.grey200
         },
         canvasHeader: {
+            checkLight: theme.colors?.successLight,
+            checkDark: theme.colors?.successDark,
             deployLight: theme.colors?.primaryLight,
             deployDark: theme.colors?.primaryDark,
             saveLight: theme.colors?.secondaryLight,
