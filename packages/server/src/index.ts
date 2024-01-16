@@ -16,6 +16,7 @@ import { ChatflowPool } from './ChatflowPool'
 import { CachePool } from './CachePool'
 import { initializeRateLimiter } from './utils/rateLimit'
 import { getAPIKeys } from './utils/apiKey'
+import localtunnel from 'localtunnel'
 import { sanitizeMiddleware } from './utils/XSS'
 import { CredentialRoutes } from './routes/CredentialRoutes'
 import { PromptHubRoutes } from './routes/PromptHubRoutes'
@@ -30,6 +31,8 @@ import { ChatRoutes } from './routes/ChatRoutes'
 import { ConfigRoutes } from './routes/ConfigRoutes'
 import { ComponentRoutes } from './routes/ComponentRoutes'
 import * as process from 'process'
+import { WorkflowRoutes } from './routes/WorkflowRoutes'
+import { getRandomSubdomain } from './utils/workflow.utils'
 
 export class App {
     app: express.Application
@@ -74,6 +77,31 @@ export class App {
 
                 // Initialize cache pool
                 this.cachePool = new CachePool()
+
+                // Initialize localtunnel
+                if (process.env.ENABLE_TUNNEL === 'true') {
+                    const subdomain = getRandomSubdomain()
+
+                    const tunnelSettings: localtunnel.TunnelConfig = {
+                        subdomain
+                    }
+
+                    const port = parseInt(process.env.PORT || '', 10) || 3000
+
+                    const createTunnel = (timeout: number): Promise<localtunnel.Tunnel | string> => {
+                        return new Promise(function (resolve, reject) {
+                            localtunnel(port, tunnelSettings).then(resolve, reject)
+                            setTimeout(resolve, timeout, 'TUNNEL_TIMED_OUT')
+                        })
+                    }
+
+                    const newTunnel = await createTunnel(10000)
+
+                    if (typeof newTunnel !== 'string') {
+                        process.env.TUNNEL_BASE_URL = `${newTunnel.url}/`
+                        console.info('🌐[server]: TUNNEL_BASE_URL = ', process.env.TUNNEL_BASE_URL)
+                    }
+                }
             })
             .catch((err) => {
                 logger.error('❌ [server]: Error during Data Source initialization:', err)
@@ -185,6 +213,7 @@ export class App {
         }
         predictionRoutes.configureRoutes()
         new ChatRoutes(this.app).configureRoutes()
+        new WorkflowRoutes(this.app).configureRoutes()
 
         // ----------------------------------------
         // Serve UI static
