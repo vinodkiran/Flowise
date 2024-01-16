@@ -22,3 +22,4 @@ export class Credential implements ICredential {
     @UpdateDateColumn()
     updatedDate: Date
 }
+
