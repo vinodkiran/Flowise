@@ -88,7 +88,7 @@ const Canvas = () => {
 
     // ==============================|| Chatflow API ||============================== //
 
-    const getNodesApi = useApi(nodesApi.getAllNodes)
+    const getNodesApi = useApi(nodesApi.getChatflowNodes)
     const createNewChatflowApi = useApi(chatflowsApi.createNewChatflow)
     const testChatflowApi = useApi(chatflowsApi.testChatflow)
     const updateChatflowApi = useApi(chatflowsApi.updateChatflow)
