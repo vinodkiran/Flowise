@@ -1,3 +1,4 @@
+import { CronJob } from 'cron'
 /**
  * Types
  */
@@ -16,6 +17,7 @@ export type NodeParamsType =
     | 'date'
     | 'file'
     | 'folder'
+    | 'array' //from workflow integration
 
 export type CommonType = string | number | boolean | undefined | null
 
@@ -40,10 +42,28 @@ export interface IAttachment {
     filename?: string
 }
 
+// export interface INodeOptionsValue {
+//     label: string
+//     name: string
+//     description?: string
+// }
+
 export interface INodeOptionsValue {
     label: string
     name: string
     description?: string
+    parentGroup?: string
+    inputParameters?: string
+    exampleParameters?: string
+    outputResponse?: string
+    exampleResponse?: ICommonObject
+    show?: INodeDisplay
+    hide?: INodeDisplay
+    /*
+     * Only used on credentialMethod option to hide registeredCredentials
+     * For example: noAuth
+     */
+    hideRegisteredCredential?: boolean
 }
 
 export interface INodeOutputsValue {
@@ -74,6 +94,11 @@ export interface INodeParams {
     loadMethod?: string
     hidden?: boolean
     variables?: ICommonObject[]
+    //from workflow integration
+    array?: Array<INodeParams>
+    loadFromDbCollections?: DbCollectionName[]
+    show?: INodeDisplay
+    hide?: INodeDisplay
 }
 
 export interface INodeExecutionData {
@@ -87,7 +112,7 @@ export interface INodeDisplay {
 export interface INodeProperties {
     label: string
     name: string
-    type: string
+    type: string // from workflow integration - type is NodeType
     icon: string
     version: number
     category: string
@@ -95,13 +120,20 @@ export interface INodeProperties {
     description?: string
     filePath?: string
     badge?: string
+    incoming?: number // workflow integration - number of incoming connections
+    outgoing?: number // workflow integration - number of outgoing connections
 }
 
 export interface INode extends INodeProperties {
     inputs?: INodeParams[]
     output?: INodeOutputsValue[]
     loadMethods?: {
-        [key: string]: (nodeData: INodeData, options?: ICommonObject) => Promise<INodeOptionsValue[]>
+        [key: string]: (
+            nodeData: INodeData,
+            options?: ICommonObject,
+            dbCollection?: IDbCollection,
+            apiKeys?: ICommonObject[]
+        ) => Promise<INodeOptionsValue[]>
     }
     vectorStoreMethods?: {
         upsert: (nodeData: INodeData, options?: ICommonObject) => Promise<void>
@@ -112,9 +144,29 @@ export interface INode extends INodeProperties {
         clearSessionMemory: (nodeData: INodeData, options?: ICommonObject) => Promise<void>
         getChatMessages: (nodeData: INodeData, options?: ICommonObject) => Promise<string>
     }
+    //from workflow integration
+    actions?: INodeParams[]
+    credentials?: INodeParams[]
+    networks?: INodeParams[]
+    inputParameters?: INodeParams[]
+    webhookMethods?: {
+        createWebhook: (nodeData: INodeData, webhookFullUrl: string) => Promise<string | undefined>
+        deleteWebhook: (nodeData: INodeData, webhookId: string) => Promise<boolean>
+    }
+    runWorkflow?(nodeData: INodeData): Promise<INodeExecutionData[] | null>
+    runTrigger?(nodeData: INodeData): Promise<void>
+    removeTrigger?(nodeData: INodeData): Promise<void>
+    runWebhook?(nodeData: INodeData): Promise<IWebhookNodeExecutionData[] | null>
+    // end of workflow integration
     init?(nodeData: INodeData, input: string, options?: ICommonObject): Promise<any>
     run?(nodeData: INodeData, input: string, options?: ICommonObject): Promise<string | ICommonObject>
 }
+// from workflow integration
+// export interface INode extends INodeProperties {
+//     loadMethods?: {
+//         [key: string]: (nodeData: INodeData, dbCollection?: IDbCollection, apiKeys?: ICommonObject[]) => Promise<INodeOptionsValue[]>
+//     }
+// }
 
 export interface INodeData extends INodeProperties {
     id: string
@@ -123,6 +175,21 @@ export interface INodeData extends INodeProperties {
     credential?: string
     instance?: any
     loadMethod?: string // method to load async options
+
+    // from workflow integration
+    emitEventKey?: string // event emitter key for triggers
+
+    actions?: ICommonObject
+    credentials?: ICommonObject
+    networks?: ICommonObject
+    inputParameters?: ICommonObject
+    outputResponses?: ICommonObject
+
+    loadFromDbCollections?: DbCollectionName[] // method to load async options
+
+    req?: Request // For webhook
+    webhookEndpoint?: string // For webhook
+    // end of workflow integration
 }
 
 export interface INodeCredential {
@@ -130,6 +197,10 @@ export interface INodeCredential {
     name: string
     description?: string
     inputs?: INodeParams[]
+    // from workflow integration
+    // version: number
+    // credentials: INodeParams[]
+    // end of workflow integration
 }
 
 export interface IMessage {
@@ -229,4 +300,60 @@ export abstract class FlowiseSummaryMemory extends ConversationSummaryMemory imp
     abstract addChatMessages(msgArray: { text: string; type: MessageType }[], overrideSessionId?: string): Promise<void>
     abstract clearChatMessages(overrideSessionId?: string): Promise<void>
     abstract resumeMessages(messages: IMessage[]): Promise<void>
+}
+
+// from workflow integration
+export interface IWorkflow {
+    _id: string
+    shortId: string
+    name: string
+    flowData: string
+    deployed: boolean
+    updatedDate: Date
+    createdDate: Date
+}
+
+export interface IExecution {
+    _id: string
+    shortId: string
+    workflowShortId: string
+    executionData: string
+    state: ExecutionState
+    createdDate: Date
+    stoppedDate?: Date
+}
+
+/**
+ * Types
+ */
+export type ExecutionState = 'INPROGRESS' | 'FINISHED' | 'ERROR' | 'TERMINATED' | 'TIMEOUT'
+export type NodeType = 'action' | 'webhook' | 'trigger'
+export type DbCollectionName = 'Contract' | 'Webhook' | 'Workflow' | 'Credential' | 'Execution' | 'Wallet'
+
+/**
+ * Others
+ */
+export type IDbCollection = {
+    [key in DbCollectionName]: any[]
+}
+
+export interface IWebhookNodeExecutionData {
+    data: INodeExecutionData
+    response?: any
+}
+
+export interface ICronJobs {
+    [key: string]: CronJob[]
+}
+
+export interface IProviders {
+    [key: string]: {
+        provider: any
+        filter?: any
+    }
+}
+
+export interface IOAuth2RefreshResponse {
+    access_token: string
+    expires_in: string
 }
