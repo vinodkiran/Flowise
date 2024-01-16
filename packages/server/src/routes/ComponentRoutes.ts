@@ -15,12 +15,40 @@ export class ComponentRoutes extends AbstractRoutes {
     // Components
     // ----------------------------------------
     configureRoutes() {
-        // Get all component nodes
+        /** DEPRECATED - Use /api/v1/workflow-nodes or /api/v1/chatflow-nodes instead */
         this.app.get('/api/v1/nodes', (req: Request, res: Response) => {
             const returnData = []
             for (const nodeName in this.nodesPool.componentNodes) {
                 const clonedNode = cloneDeep(this.nodesPool.componentNodes[nodeName])
                 returnData.push(clonedNode)
+            }
+            return res.json(returnData)
+        })
+
+        // Get all component nodes
+        this.app.get('/api/v1/workflow-nodes', (req: Request, res: Response) => {
+            const returnData = []
+            for (const nodeName in this.nodesPool.componentNodes) {
+                const node = this.nodesPool.componentNodes[nodeName]
+                // type parameter is only available for workflow nodes
+                if (node.type === 'action' || node.type === 'trigger' || node.type === 'webhook') {
+                    const clonedNode = cloneDeep(node)
+                    returnData.push(clonedNode)
+                }
+            }
+            return res.json(returnData)
+        })
+
+        // Get all component nodes
+        this.app.get('/api/v1/chatflow-nodes', (req: Request, res: Response) => {
+            const returnData = []
+            for (const nodeName in this.nodesPool.componentNodes) {
+                const node = this.nodesPool.componentNodes[nodeName]
+                // type parameter is only available for workflow nodes
+                if (node.type !== 'action' && node.type !== 'trigger' && node.type !== 'webhook') {
+                    const clonedNode = cloneDeep(node)
+                    returnData.push(clonedNode)
+                }
             }
             return res.json(returnData)
         })
