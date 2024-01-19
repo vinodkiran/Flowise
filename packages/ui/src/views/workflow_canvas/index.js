@@ -72,7 +72,7 @@ const Canvas = () => {
     const dispatch = useDispatch()
     const canvas = useSelector((state) => state.canvas)
     const [canvasDataStore, setCanvasDataStore] = useState(canvas)
-    const [workflow, setWorkflow] = useState()
+    const [workflow, setWorkflow] = useState(null)
     const [isTestWorkflowDialogOpen, setTestWorkflowDialogOpen] = useState(false)
     const [testWorkflowDialogProps, setTestWorkflowDialogProps] = useState({})
     const [isTestingWorkflow, setIsTestingWorkflow] = useState(false)
@@ -686,14 +686,6 @@ const Canvas = () => {
                     name: 'Untitled workflow'
                 }
             })
-            // if (!canvas.workflow) {
-            //     canvas.workflow = {
-            //         name: 'Untitled workflow'
-            //     }
-            // }
-            // setWorkflow({
-            //     name: 'Untitled workflow'
-            // })
         }
 
         getNodesApi.request()

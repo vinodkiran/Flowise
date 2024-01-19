@@ -138,7 +138,6 @@ const CanvasHeader = ({ workflow, handleSaveFlow, handleDeployWorkflow, handleSt
                     </Avatar>
                 </ButtonBase>
             </Box>
-            Short ID == {workflow} == {workflow?.shortId}
             <Box sx={{ flexGrow: 1 }}>
                 {!isEditingWorkflowName && (
                     <Stack flexDirection='row'>
