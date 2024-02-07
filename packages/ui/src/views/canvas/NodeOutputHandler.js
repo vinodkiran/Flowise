@@ -18,7 +18,7 @@ const CustomWidthTooltip = styled(({ className, ...props }) => <Tooltip {...prop
 
 // ===========================|| NodeOutputHandler ||=========================== //
 
-const NodeOutputHandler = ({ outputAnchor, data, disabled = false }) => {
+const NodeOutputHandler = ({ outputAnchor, data, disabled = false, hideShowElements = undefined }) => {
     const theme = useTheme()
     const ref = useRef(null)
     const updateNodeInternals = useUpdateNodeInternals()
@@ -48,6 +48,12 @@ const NodeOutputHandler = ({ outputAnchor, data, disabled = false }) => {
             }, 0)
         }
     }, [data.id, dropdownValue, updateNodeInternals])
+
+    const visibilityChange = (target) => {
+        if (hideShowElements) {
+            hideShowElements(target)
+        }
+    }
 
     return (
         <div ref={ref}>
@@ -165,6 +171,7 @@ const NodeOutputHandler = ({ outputAnchor, data, disabled = false }) => {
                                 onSelect={(newValue) => {
                                     setDropdownValue(newValue)
                                     data.outputs[outputAnchor.name] = newValue
+                                    visibilityChange(outputAnchor.name)
                                 }}
                                 value={data.outputs[outputAnchor.name] ?? outputAnchor.default ?? 'choose an option'}
                             />
@@ -178,7 +185,8 @@ const NodeOutputHandler = ({ outputAnchor, data, disabled = false }) => {
 NodeOutputHandler.propTypes = {
     outputAnchor: PropTypes.object,
     data: PropTypes.object,
-    disabled: PropTypes.bool
+    disabled: PropTypes.bool,
+    hideShowElements: PropTypes.func
 }
 
 export default NodeOutputHandler

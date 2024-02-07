@@ -57,7 +57,15 @@ export const addMMRInputParams = (inputs: any[]) => {
             placeholder: '20',
             type: 'number',
             additionalParams: true,
-            optional: true
+            optional: true,
+            hidden: true,
+            displayConditions: [
+                {
+                    element: 'searchType',
+                    comparison: 'equals',
+                    value: 'mmr'
+                }
+            ]
         },
         {
             label: 'Lambda (for MMR Search)',
@@ -67,7 +75,15 @@ export const addMMRInputParams = (inputs: any[]) => {
             placeholder: '0.5',
             type: 'number',
             additionalParams: true,
-            optional: true
+            optional: true,
+            hidden: true,
+            displayConditions: [
+                {
+                    element: 'searchType',
+                    comparison: 'equals',
+                    value: 'mmr'
+                }
+            ]
         }
     ]
 

@@ -80,6 +80,7 @@ export interface INodeParams {
     loadMethod?: string
     hidden?: boolean
     variables?: ICommonObject[]
+    displayConditions?: IConditionalDisplay[]
 }
 
 export interface INodeExecutionData {
@@ -240,4 +241,11 @@ export abstract class FlowiseSummaryMemory extends ConversationSummaryMemory imp
     ): Promise<IMessage[] | BaseMessage[]>
     abstract addChatMessages(msgArray: { text: string; type: MessageType }[], overrideSessionId?: string): Promise<void>
     abstract clearChatMessages(overrideSessionId?: string): Promise<void>
+}
+
+// conditional display
+export interface IConditionalDisplay {
+    element: string
+    comparison: string
+    value: string
 }

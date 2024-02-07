@@ -48,7 +48,14 @@ const CustomWidthTooltip = styled(({ className, ...props }) => <Tooltip {...prop
 
 // ===========================|| NodeInputHandler ||=========================== //
 
-const NodeInputHandler = ({ inputAnchor, inputParam, data, disabled = false, isAdditionalParams = false }) => {
+const NodeInputHandler = ({
+    inputAnchor,
+    inputParam,
+    data,
+    disabled = false,
+    isAdditionalParams = false,
+    hideShowElements = undefined
+}) => {
     const theme = useTheme()
     const customization = useSelector((state) => state.customization)
     const ref = useRef(null)
@@ -76,6 +83,12 @@ const NodeInputHandler = ({ inputAnchor, inputParam, data, disabled = false, isA
         }
         setExpandDialogProps(dialogProps)
         setShowExpandDialog(true)
+    }
+
+    const visibilityChange = (target) => {
+        if (hideShowElements) {
+            hideShowElements(target)
+        }
     }
 
     const onShowPromptHubButtonClicked = () => {
@@ -419,7 +432,10 @@ const NodeInputHandler = ({ inputAnchor, inputParam, data, disabled = false, isA
                                 disabled={disabled}
                                 name={inputParam.name}
                                 options={inputParam.options}
-                                onSelect={(newValue) => (data.inputs[inputParam.name] = newValue)}
+                                onSelect={(newValue) => {
+                                    data.inputs[inputParam.name] = newValue
+                                    visibilityChange(inputParam.name)
+                                }}
                                 value={data.inputs[inputParam.name] ?? inputParam.default ?? 'choose an option'}
                             />
                         )}
@@ -519,7 +535,8 @@ NodeInputHandler.propTypes = {
     inputParam: PropTypes.object,
     data: PropTypes.object,
     disabled: PropTypes.bool,
-    isAdditionalParams: PropTypes.bool
+    isAdditionalParams: PropTypes.bool,
+    hideShowElements: PropTypes.func
 }
 
 export default NodeInputHandler

@@ -57,6 +57,19 @@ class LLMChain_Chains implements INode {
                 list: true
             },
             {
+                label: 'Memory',
+                name: 'memory',
+                type: 'BaseMemory',
+                hidden: true,
+                displayConditions: [
+                    {
+                        element: 'outputPrediction',
+                        comparison: 'equals',
+                        value: 'string'
+                    }
+                ]
+            },
+            {
                 label: 'Chain Name',
                 name: 'chainName',
                 type: 'string',

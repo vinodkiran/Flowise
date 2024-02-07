@@ -50,12 +50,41 @@ const CanvasNode = ({ data }) => {
     const onDialogClicked = () => {
         const dialogProps = {
             data,
-            inputParams: data.inputParams.filter((param) => param.additionalParams),
+            inputParams: data.inputParams.filter((param) => param.additionalParams).filter((param) => !param.hidden),
             confirmButtonName: 'Save',
             cancelButtonName: 'Cancel'
         }
         setDialogProps(dialogProps)
         setShowDialog(true)
+    }
+
+    const hideShowElements = (source) => {
+        let visibilityChanged = false
+        data.inputParams.map((inputParam) => {
+            if (inputParam.displayConditions) {
+                inputParam.displayConditions.map((condition) => {
+                    if (condition.element === source) {
+                        switch (condition.comparison) {
+                            case 'equals': {
+                                inputParam['hidden'] = data.inputs[source] !== condition.value
+                                visibilityChanged = true
+                                break
+                            }
+                            case 'not-equals': {
+                                inputParam['hidden'] = data.inputs[source] === condition.value
+                                visibilityChanged = true
+                                break
+                            }
+                        }
+                    }
+                })
+            }
+        })
+        if (visibilityChanged) {
+            //refresh the dialogProps, to ensure the new visibility is applied.
+            onDialogClicked()
+            console.log('visibility changed...' + data.inputs[source])
+        }
     }
 
     useEffect(() => {
@@ -202,9 +231,11 @@ const CanvasNode = ({ data }) => {
                                 <Divider />
                             </>
                         )}
-                        {data.inputAnchors.map((inputAnchor, index) => (
-                            <NodeInputHandler key={index} inputAnchor={inputAnchor} data={data} />
-                        ))}
+                        {data.inputAnchors
+                            .filter((inputParam) => !inputParam.hidden)
+                            .map((inputAnchor, index) => (
+                                <NodeInputHandler key={index} inputAnchor={inputAnchor} data={data} hideShowElements={hideShowElements} />
+                            ))}
                         {data.inputParams
                             .filter((inputParam) => !inputParam.hidden)
                             .map((inputParam, index) => (
@@ -239,7 +270,7 @@ const CanvasNode = ({ data }) => {
                         </Box>
                         <Divider />
                         {data.outputAnchors.map((outputAnchor, index) => (
-                            <NodeOutputHandler key={index} outputAnchor={outputAnchor} data={data} />
+                            <NodeOutputHandler key={index} outputAnchor={outputAnchor} data={data} hideShowElements={hideShowElements} />
                         ))}
                     </Box>
                 </NodeTooltip>
@@ -247,6 +278,7 @@ const CanvasNode = ({ data }) => {
             <AdditionalParamsDialog
                 show={showDialog}
                 dialogProps={dialogProps}
+                hideShowElements={hideShowElements}
                 onCancel={() => setShowDialog(false)}
             ></AdditionalParamsDialog>
             <NodeInfoDialog show={showInfoDialog} dialogProps={infoDialogProps} onCancel={() => setShowInfoDialog(false)}></NodeInfoDialog>
