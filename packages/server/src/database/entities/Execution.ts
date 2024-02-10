@@ -1,28 +1,20 @@
 /* eslint-disable */
-import {
-    Entity,
-    Column,
-    Index,
-    BeforeInsert,
-    CreateDateColumn,
-    PrimaryGeneratedColumn, PrimaryColumn
-} from "typeorm";
-import {v4 as uuidv4} from 'uuid';
+import { Entity, Column, Index, BeforeInsert, CreateDateColumn, PrimaryGeneratedColumn } from 'typeorm'
 
 import { shortId } from '../../utils/workflow.utils'
-import { ExecutionState, IExecution } from "../../Interface";
+import { ExecutionState, IExecution } from '../../Interface'
 
 @Entity()
 export class Execution implements IExecution {
-    @Column()
+    @PrimaryGeneratedColumn('uuid')
     id: string
 
-    @PrimaryColumn()
+    @Column()
+    @Index()
     shortId: string
 
     @BeforeInsert()
     beforeInsert() {
-        this.id = uuidv4()
         this.shortId = shortId('E', new Date())
     }
 

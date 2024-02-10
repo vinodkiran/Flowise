@@ -9,12 +9,13 @@ import { postgresMigrations } from './database/migrations/postgres'
 
 let appDataSource: DataSource
 
-export const init = async (): Promise<void> => {
+export const init = async (): Promise<DataSource> => {
     let homePath
+    let dataSource: DataSource
     switch (process.env.DATABASE_TYPE) {
         case 'sqlite':
             homePath = process.env.DATABASE_PATH ?? path.join(getUserHome(), '.flowise')
-            appDataSource = new DataSource({
+            dataSource = new DataSource({
                 type: 'sqlite',
                 database: path.resolve(homePath, 'database.sqlite'),
                 synchronize: false,
@@ -22,9 +23,9 @@ export const init = async (): Promise<void> => {
                 entities: Object.values(entities),
                 migrations: sqliteMigrations
             })
-            break
+            return dataSource
         case 'mysql':
-            appDataSource = new DataSource({
+            dataSource = new DataSource({
                 type: 'mysql',
                 host: process.env.DATABASE_HOST,
                 port: parseInt(process.env.DATABASE_PORT || '3306'),
@@ -37,9 +38,9 @@ export const init = async (): Promise<void> => {
                 entities: Object.values(entities),
                 migrations: mysqlMigrations
             })
-            break
+            return dataSource
         case 'postgres':
-            appDataSource = new DataSource({
+            dataSource = new DataSource({
                 type: 'postgres',
                 host: process.env.DATABASE_HOST,
                 port: parseInt(process.env.DATABASE_PORT || '5432'),
@@ -52,10 +53,10 @@ export const init = async (): Promise<void> => {
                 entities: Object.values(entities),
                 migrations: postgresMigrations
             })
-            break
+            return dataSource
         default:
             homePath = process.env.DATABASE_PATH ?? path.join(getUserHome(), '.flowise')
-            appDataSource = new DataSource({
+            dataSource = new DataSource({
                 type: 'sqlite',
                 database: path.resolve(homePath, 'database.sqlite'),
                 synchronize: false,
@@ -63,13 +64,13 @@ export const init = async (): Promise<void> => {
                 entities: Object.values(entities),
                 migrations: sqliteMigrations
             })
-            break
+            return dataSource
     }
 }
 
-export function getDataSource(): DataSource {
+export const getDataSource = async (): Promise<DataSource> => {
     if (appDataSource === undefined) {
-        init()
+        appDataSource = await init()
     }
     return appDataSource
 }

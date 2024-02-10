@@ -1,8 +1,26 @@
 import moment from 'moment'
-import { IReactFlowNode, IVariableDict } from '../Interface'
+import {
+    IComponentNodesPool,
+    INodeDependencies,
+    INodeDirectedGraph,
+    IReactFlowEdge,
+    IReactFlowNode,
+    IReactFlowObject,
+    IVariableDict,
+    IWebhookNode,
+    IWorkflowExecutedData,
+    WebhookMethod
+} from '../Interface'
 import lodash from 'lodash'
-import { ICommonObject, INodeData, INodeExecutionData, IOAuth2RefreshResponse } from 'flowise-components'
+import { ICommonObject, INodeData as INodeDataFromComponent, INodeData, INodeExecutionData } from 'flowise-components'
 import { DataSource } from 'typeorm'
+import { Request, Response } from 'express'
+import { DeployedWorkflowPool } from '../workflow/DeployedWorkflowPool'
+import { ActiveTestWebhookPool } from '../workflow/ActiveTestWebhookPool'
+import { decryptNodeCredentials, testWorkflow } from '../routes/WorkflowRoutes'
+import { Webhook } from '../database/entities/Webhook'
+import { WorkFlow } from '../database/entities/WorkFlow'
+import path from 'path'
 
 export enum ShortIdConstants {
     WORKFLOW_ID_PREFIX = 'W',
@@ -89,7 +107,7 @@ export const getVariableValue = (paramValue: string, reactFlowNodes: IReactFlowN
             const variableEndIdx = startIdx
             const variableFullPath = returnVal.substring(variableStartIdx, variableEndIdx)
 
-            // Split by first occurence of '[' to get just nodeId
+            // Split by first occurrence of '[' to get just nodeId
             const [variableNodeId, ...rest] = variableFullPath.split('[')
             let variablePath = 'outputResponses.output' + '[' + rest.join('[')
             if (variablePath.includes('$index')) {
@@ -115,7 +133,7 @@ export const getVariableValue = (paramValue: string, reactFlowNodes: IReactFlowN
     variablePaths.sort() // Sort by length of variable path because longer path could possibly contains nested variable
     variablePaths.forEach((path) => {
         const variableValue = variableDict[path]
-        // Replace all occurence
+        // Replace all occurrence
         returnVal = returnVal.split(path).join(variableValue)
     })
 
@@ -149,7 +167,7 @@ export const getVariableLength = (paramValue: string, reactFlowNodes: IReactFlow
             const variableFullPath = paramValue.substring(variableStartIdx, variableEndIdx)
 
             if (variableFullPath.includes('$index')) {
-                // Split by first occurence of '[' to get just nodeId
+                // Split by first occurrence of '[' to get just nodeId
                 const [variableNodeId, ...rest] = variableFullPath.split('[')
                 const variablePath = 'outputResponses.output' + '[' + rest.join('[')
                 const [variableArrayPath, ..._] = variablePath.split('[$index]')
@@ -168,12 +186,12 @@ export const getVariableLength = (paramValue: string, reactFlowNodes: IReactFlow
 }
 
 /**
- * Loop through each inputs and resolve variable if neccessary
+ * Loop through each input and resolve variable if necessary
  * @param {INodeData} reactFlowNodeData
  * @param {IReactFlowNode[]} reactFlowNodes
  * @returns {INodeData}
  */
-export const resolveVariables = (reactFlowNodeData: INodeData, reactFlowNodes: IReactFlowNode[]): INodeData[] => {
+export const resolveVariables = (reactFlowNodeData: INodeData, reactFlowNodes: IReactFlowNode[]): INodeDataFromComponent[] => {
     const flowNodeDataArray: INodeData[] = []
     const flowNodeData = lodash.cloneDeep(reactFlowNodeData)
     const types = ['actions', 'networks', 'inputParameters']
@@ -256,3 +274,307 @@ export const checkOAuth2TokenRefreshed = (result: INodeExecutionData[] | null, n
     }
 }
 
+/**
+ * Construct directed graph and node dependencies score
+ * @param {IReactFlowNode[]} reactFlowNodes
+ * @param {IReactFlowEdge[]} reactFlowEdges
+ */
+export const constructGraphs = (reactFlowNodes: IReactFlowNode[], reactFlowEdges: IReactFlowEdge[]) => {
+    const nodeDependencies = {} as INodeDependencies
+    const graph = {} as INodeDirectedGraph
+
+    for (let i = 0; i < reactFlowNodes.length; i += 1) {
+        const nodeId = reactFlowNodes[i].id
+        nodeDependencies[nodeId] = 0
+        graph[nodeId] = []
+    }
+
+    for (let i = 0; i < reactFlowEdges.length; i += 1) {
+        const source = reactFlowEdges[i].source
+        const target = reactFlowEdges[i].target
+
+        if (Object.prototype.hasOwnProperty.call(graph, source)) {
+            graph[source].push(target)
+        } else {
+            graph[source] = [target]
+        }
+        nodeDependencies[target] += 1
+    }
+
+    return { graph, nodeDependencies }
+}
+
+// /**
+//  * Transform ICredentialBody from req to Credential entity
+//  * @returns {Credential}
+//  * @param body
+//  */
+// export const transformToCredentialEntity = async (body: ICredentialBody): Promise<Credential> => {
+//     const credentialBody = {
+//         name: body.name,
+//         nodeCredentialName: body.nodeCredentialName,
+//         credentialData: encryptCredentialData(body.credentialData)
+//     }
+//
+//     const newCredential = new Credential()
+//     Object.assign(newCredential, credentialBody)
+//
+//     return newCredential
+// }
+
+/**
+ * Get starting node and check if flow is valid
+ * @param {INodeDependencies} nodeDependencies
+ * @param {IReactFlowNode[]} reactFlowNodes
+ */
+export const getStartingNode = (nodeDependencies: INodeDependencies, reactFlowNodes: IReactFlowNode[]) => {
+    // Find starting node
+    const startingNodeIds = [] as string[]
+    Object.keys(nodeDependencies).forEach((nodeId) => {
+        if (nodeDependencies[nodeId] === 0) {
+            startingNodeIds.push(nodeId)
+        }
+    })
+
+    // Action nodes with 0 dependencies are not valid, must connected to source
+    const faultyNodeLabels = []
+    for (let i = 0; i < startingNodeIds.length; i += 1) {
+        const node = reactFlowNodes.find((nd) => nd.id === startingNodeIds[i])
+
+        if (node && node.data && node.data.type && node.data.type !== 'trigger' && node.data.type !== 'webhook') {
+            faultyNodeLabels.push(node.data.label)
+        }
+    }
+
+    return { faultyNodeLabels, startingNodeIds }
+}
+
+/**
+ * Function to get both graphs and starting nodes
+ * @param {Response} res
+ * @param {IReactFlowNode[]} reactFlowNodes
+ * @param {IReactFlowEdge[]} reactFlowEdges
+ */
+export const constructGraphsAndGetStartingNodes = (res: Response, reactFlowNodes: IReactFlowNode[], reactFlowEdges: IReactFlowEdge[]) => {
+    const { graph, nodeDependencies } = constructGraphs(reactFlowNodes, reactFlowEdges)
+    const { faultyNodeLabels, startingNodeIds } = getStartingNode(nodeDependencies, reactFlowNodes)
+    if (faultyNodeLabels.length) {
+        let message = `Action nodes must connected to source. Faulty nodes: `
+        for (let i = 0; i < faultyNodeLabels.length; i += 1) {
+            message += `${faultyNodeLabels[i]}`
+            if (i !== faultyNodeLabels.length - 1) {
+                message += ', '
+            }
+        }
+        res.status(500).send(message)
+        return
+    }
+
+    return { graph, startingNodeIds }
+}
+
+/**
+ * Process webhook
+ * @param {Response} res
+ * @param {Request} req
+ * @param {DataSource} AppDataSource
+ * @param {string} webhookEndpoint
+ * @param {WebhookMethod} httpMethod
+ * @param {IComponentNodesPool} componentNodes
+ * @param {any} io
+ * @param deployedWorkflowsPool
+ * @param activeTestWebhooksPool
+ */
+export const processWebhook = async (
+    res: Response,
+    req: Request,
+    AppDataSource: DataSource,
+    webhookEndpoint: string,
+    httpMethod: WebhookMethod,
+    componentNodes: IComponentNodesPool,
+    io: any,
+    deployedWorkflowsPool: DeployedWorkflowPool,
+    activeTestWebhooksPool: ActiveTestWebhookPool
+) => {
+    try {
+        // Find if webhook is in activeTestWebhookPool
+        const testWebhookKey = `${webhookEndpoint}_${httpMethod}`
+        if (Object.prototype.hasOwnProperty.call(activeTestWebhooksPool.activeTestWebhooks, testWebhookKey)) {
+            const { nodes, edges, nodeData, clientId, isTestWorkflow, webhookNodeId } =
+                activeTestWebhooksPool.activeTestWebhooks[testWebhookKey]
+            const webhookNodeInstance = componentNodes[nodeData.name] as IWebhookNode
+
+            await decryptNodeCredentials(nodeData, AppDataSource)
+
+            if (!isTestWorkflow) {
+                // TODO: Temporary Hack to fix the issue with runWebhook
+                ;(nodeData as any).req = req
+                const result = await webhookNodeInstance.runWebhook!.call(webhookNodeInstance, nodeData)
+
+                if (result === null) return res.status(200).send('OK!')
+
+                // Emit webhook result
+                io.to(clientId).emit('testWebhookNodeResponse', result)
+
+                // Delete webhook from 3rd party apps and from pool
+                activeTestWebhooksPool.remove(testWebhookKey, componentNodes)
+
+                const webhookResponseCode = (nodeData.inputParameters?.responseCode as number) || 200
+                if ((nodeData.inputParameters?.returnType as string) === 'lastNodeResponse') {
+                    const webhookResponseData = result || []
+                    return res.status(webhookResponseCode).json(webhookResponseData)
+                } else {
+                    // @ts-ignore
+                    const webhookResponseData = (nodeData.inputParameters?.responseData as string) || `Webhook ${req.originalUrl} received!`
+                    return res.status(webhookResponseCode).send(webhookResponseData)
+                }
+            } else {
+                // TODO: Temporary Hack to fix the issue with runWebhook
+                ;(nodeData as any).req = req
+                const result = await webhookNodeInstance.runWebhook!.call(webhookNodeInstance, nodeData)
+
+                if (result === null) return res.status(200).send('OK!')
+
+                const newWorkflowExecutedData = {
+                    nodeId: webhookNodeId,
+                    nodeLabel: nodeData.label,
+                    data: result,
+                    status: 'FINISHED'
+                } as IWorkflowExecutedData
+
+                io.to(clientId).emit('testWorkflowNodeResponse', newWorkflowExecutedData)
+
+                // Delete webhook from 3rd party apps and from pool
+                await activeTestWebhooksPool.remove(testWebhookKey, componentNodes)
+
+                const { graph } = constructGraphs(nodes, edges)
+
+                const webhookResponseCode = (nodeData.inputParameters?.responseCode as number) || 200
+                if ((nodeData.inputParameters?.returnType as string) === 'lastNodeResponse') {
+                    const lastExecutedResult = await testWorkflow(
+                        webhookNodeId,
+                        result.length ? [{ data: result[0].data }] : [],
+                        nodes,
+                        edges,
+                        graph,
+                        componentNodes,
+                        clientId,
+                        io,
+                        AppDataSource,
+                        true
+                    )
+                    const webhookResponseData = lastExecutedResult || []
+                    return res.status(webhookResponseCode).json(webhookResponseData)
+                } else {
+                    await testWorkflow(
+                        webhookNodeId,
+                        result.length ? [{ data: result[0].data }] : [],
+                        nodes,
+                        edges,
+                        graph,
+                        componentNodes,
+                        clientId,
+                        io,
+                        AppDataSource
+                    )
+                    // @ts-ignore
+                    const webhookResponseData = (nodeData.inputParameters?.responseData as string) || `Webhook ${req.originalUrl} received!`
+                    return res.status(webhookResponseCode).send(webhookResponseData)
+                }
+            }
+        } else {
+            const webhook = await AppDataSource.getRepository(Webhook).findOneBy({
+                webhookEndpoint,
+                httpMethod
+            })
+
+            if (!webhook) {
+                // @ts-ignore
+                res.status(404).send(`Webhook ${req.originalUrl} not found`)
+                return
+            }
+
+            const nodeId = webhook.nodeId
+            const workflowShortId = webhook.workflowShortId
+
+            const workflow = await AppDataSource.getRepository(WorkFlow).findOneBy({
+                shortId: workflowShortId
+            })
+
+            if (!workflow) {
+                res.status(404).send(`Workflow ${workflowShortId} not found`)
+                return
+            }
+
+            const flowDataString = workflow.flowData
+            const flowData: IReactFlowObject = JSON.parse(flowDataString)
+            const reactFlowNodes = flowData.nodes as IReactFlowNode[]
+            const reactFlowEdges = flowData.edges as IReactFlowEdge[]
+
+            const reactFlowNode = reactFlowNodes.find((nd) => nd.id === nodeId)
+
+            if (!reactFlowNode) {
+                res.status(404).send(`Node ${nodeId} not found`)
+                return
+            }
+
+            const nodeData = reactFlowNode.data
+            const nodeName = nodeData.name
+
+            // Start workflow
+            const { graph, nodeDependencies } = constructGraphs(reactFlowNodes, reactFlowEdges)
+            const { faultyNodeLabels, startingNodeIds } = getStartingNode(nodeDependencies, reactFlowNodes)
+            if (faultyNodeLabels.length) {
+                let message = `Action nodes must connected to source. Faulty nodes: `
+                for (let i = 0; i < faultyNodeLabels.length; i += 1) {
+                    message += `${faultyNodeLabels[i]}`
+                    if (i !== faultyNodeLabels.length - 1) {
+                        message += ', '
+                    }
+                }
+                res.status(500).send(message)
+                return
+            }
+
+            const nodeInstance = componentNodes[nodeName]
+            const webhookNode = nodeInstance as IWebhookNode
+            // TODO: Temporary Hack to fix the issue with runWebhook
+            ;(nodeData as any).req = req
+            const result = (await webhookNode.runWebhook!.call(webhookNode, nodeData)) || []
+
+            if (result === null) return res.status(200).send('OK!')
+
+            const webhookResponseCode = (nodeData.inputParameters?.responseCode as number) || 200
+
+            const workflowExecutedData = (await deployedWorkflowsPool.startWorkflow(
+                workflowShortId,
+                reactFlowNode,
+                reactFlowNode.id,
+                result,
+                componentNodes,
+                startingNodeIds,
+                graph
+            )) as unknown as IWorkflowExecutedData[]
+            if ((nodeData.inputParameters?.returnType as string) === 'lastNodeResponse') {
+                const lastExecutedResult = workflowExecutedData[workflowExecutedData.length - 1]
+                const webhookResponseData = lastExecutedResult?.data || []
+                return res.status(webhookResponseCode).json(webhookResponseData)
+            } else {
+                // @ts-ignore
+                const webhookResponseData = (nodeData.inputParameters?.responseData as string) || `Webhook ${req.originalUrl} received!`
+                return res.status(webhookResponseCode).send(webhookResponseData)
+            }
+        }
+    } catch (error) {
+        res.status(500).send(`Webhook error: ${error}`)
+        return
+    }
+}
+
+/**
+ * Returns the path of oauth2 html
+ * @returns {string}
+ */
+export const getOAuth2HTMLPath = (): string => {
+    return path.join(__dirname, '..', '..', 'oauth2.html')
+}

@@ -27,7 +27,7 @@ export class ChatRoutes extends AbstractRoutes {
     // ----------------------------------------
     configureRoutes() {
         // Get all chatflows
-        this.app.get('/api/v1/chatflows', async (req: Request, res: Response) => {
+        this.app.get('/api/v1/chatflows', async (_: Request, res: Response) => {
             const chatflows: IChatFlow[] = await getAllChatFlow()
             return res.json(chatflows)
         })
@@ -330,12 +330,13 @@ export class ChatRoutes extends AbstractRoutes {
  */
 export async function getChatId(chatflowid: string): Promise<string> {
     // first chatmessage id as the unique chat id
-    const firstChatMessage = await getDataSource()
+    let dataSource = await getDataSource()
+    const firstChatMessage = await dataSource
         .getRepository(ChatMessage)
         .createQueryBuilder('cm')
         .select('cm.id')
         .where('chatflowid = :chatflowid', { chatflowid })
         .orderBy('cm.createdDate', 'ASC')
         .getOne()
-    return firstChatMessage ? firstChatMessage.id : ''
+    return firstChatMessage ? firstChatMessage?.id : ''
 }

@@ -1,8 +1,18 @@
 // assets
-import { IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot, IconVariable, IconHierarchy3 } from '@tabler/icons'
+import {
+    IconHierarchy,
+    IconBuildingStore,
+    IconKey,
+    IconTool,
+    IconLock,
+    IconRobot,
+    IconVariable,
+    IconHierarchy3,
+    IconListCheck
+} from '@tabler/icons'
 
 // constant
-const icons = { IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot, IconVariable, IconHierarchy3 }
+const icons = { IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot, IconVariable, IconHierarchy3, IconListCheck }
 
 // ==============================|| DASHBOARD MENU ITEMS ||============================== //
 
@@ -24,6 +34,14 @@ const dashboard = {
             title: 'Workflows',
             type: 'item',
             url: '/workflows',
+            icon: icons.IconHierarchy3,
+            breadcrumbs: true
+        },
+        {
+            id: 'executions',
+            title: 'Executions',
+            type: 'item',
+            url: '/executions',
             icon: icons.IconHierarchy3,
             breadcrumbs: true
         },

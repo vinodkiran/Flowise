@@ -61,7 +61,7 @@ export class CredentialRoutes extends AbstractRoutes {
 
             if (!credential) return res.status(404).send(`Credential ${req.params.id} not found`)
 
-            // Decrpyt credentialData
+            // Decrypt credentialData
             const decryptedCredentialData = await decryptCredentialData(
                 credential.encryptedData,
                 credential.credentialName,

@@ -33,13 +33,20 @@ import { ComponentRoutes } from './routes/ComponentRoutes'
 import * as process from 'process'
 import { WorkflowRoutes } from './routes/WorkflowRoutes'
 import { getRandomSubdomain } from './utils/workflow.utils'
+import { ActiveTestTriggerPool } from './workflow/ActiveTestTriggerPool'
+import { ActiveTestWebhookPool } from './workflow/ActiveTestWebhookPool'
+import { DataSource } from 'typeorm'
+import { DeployedWorkflowPool } from './workflow/DeployedWorkflowPool'
 
 export class App {
     app: express.Application
     protected _nodesPool: NodesPool
     chatflowPool: ChatflowPool
     cachePool: CachePool
-    AppDataSource = getDataSource()
+    AppDataSource: DataSource
+    activeTestTriggerPool: ActiveTestTriggerPool
+    activeTestWebhookPool: ActiveTestWebhookPool
+    deployedWorkflowsPool: DeployedWorkflowPool
 
     constructor() {
         this.app = express()
@@ -50,6 +57,7 @@ export class App {
     }
 
     async initDatabase() {
+        this.AppDataSource = await getDataSource()
         // Initialize database
         this.AppDataSource.initialize()
             .then(async () => {
@@ -77,6 +85,16 @@ export class App {
 
                 // Initialize cache pool
                 this.cachePool = new CachePool()
+
+                // Initialize activeTestTriggerPool instance
+                this.activeTestTriggerPool = new ActiveTestTriggerPool()
+
+                // Initialize activeTestWebhookPool instance
+                this.activeTestWebhookPool = new ActiveTestWebhookPool()
+
+                // Initialize deployed worklows instances
+                this.deployedWorkflowsPool = new DeployedWorkflowPool()
+                await this.deployedWorkflowsPool.initialize(this.AppDataSource, this.nodesPool.componentNodes)
 
                 // Initialize localtunnel
                 if (process.env.ENABLE_TUNNEL === 'true') {
@@ -213,7 +231,16 @@ export class App {
         }
         predictionRoutes.configureRoutes()
         new ChatRoutes(this.app).configureRoutes()
-        new WorkflowRoutes(this.app).configureRoutes()
+        let workflowRoutes = new WorkflowRoutes(
+            this.app,
+            this.activeTestTriggerPool,
+            this.activeTestWebhookPool,
+            this.deployedWorkflowsPool
+        )
+        workflowRoutes.configureRoutes()
+        if (socketIO) {
+            workflowRoutes.socketIO = socketIO
+        }
 
         // ----------------------------------------
         // Serve UI static
@@ -244,7 +271,7 @@ export class App {
 let serverApp: App | undefined
 
 export async function getAllChatFlow(): Promise<IChatFlow[]> {
-    return await getDataSource().getRepository(ChatFlow).find()
+    return (await getDataSource()).getRepository(ChatFlow).find()
 }
 
 export async function start(): Promise<void> {

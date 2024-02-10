@@ -15,6 +15,7 @@ export const notEmptyRegex = '(.|\\s)*\\S(.|\\s)*' //return true if string is no
  *
  * @export
  * @param {(ICommonObject | ICommonObject[])} responseData
+ * @param oAuth2RefreshedData
  * @returns {INodeExecutionData[]}
  */
 export function returnNodeExecutionData(responseData: ICommonObject | ICommonObject[], oAuth2RefreshedData?: any): INodeExecutionData[] {
@@ -283,7 +284,7 @@ export const getNodeModulesPackagePath = (packageName: string): string => {
  * @param {string} suppliedKey
  * @returns {boolean}
  */
-export const compareKeys = (storedKey: string, suppliedKey: string) => {
+export const compareKeys = (storedKey: string, suppliedKey: string): boolean => {
     const [hashedPassword, salt] = storedKey.split('.')
     const buffer = scryptSync(suppliedKey, salt, 64) as Buffer
     return timingSafeEqual(Buffer.from(hashedPassword, 'hex'), buffer)

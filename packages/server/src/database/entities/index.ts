@@ -5,6 +5,8 @@ import { Tool } from './Tool'
 import { Assistant } from './Assistant'
 import { Variable } from './Variable'
 import { WorkFlow } from './WorkFlow'
+import { Execution } from './Execution'
+import { Webhook } from './Webhook'
 
 export const entities = {
     ChatFlow,
@@ -13,5 +15,7 @@ export const entities = {
     Tool,
     Assistant,
     Variable,
-    WorkFlow
+    WorkFlow,
+    Execution,
+    Webhook
 }

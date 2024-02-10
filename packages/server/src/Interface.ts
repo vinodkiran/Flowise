@@ -244,7 +244,7 @@ export interface ICredential {
 }
 
 export interface IWebhook {
-    _id: string
+    id: string
     workflowShortId: string
     webhookEndpoint: string
     httpMethod: WebhookMethod
@@ -287,12 +287,12 @@ export type WebhookMethod = 'GET' | 'POST'
  * Others
  */
 export interface IWorkflowResponse extends IWorkFlow {
-    execution: IExecution
+    execution?: IExecution
     executionCount: number
 }
 
 export interface IExecutionResponse extends IExecution {
-    workflow: IWorkFlow
+    workflow?: IWorkFlow
 }
 
 export interface INode extends INodeFromComponent {
@@ -312,14 +312,14 @@ export interface IComponentNodesPool {
 }
 
 export interface IActiveTestTriggerPool {
-    [key: string]: INodeData
+    [key: string]: INodeDataFromComponent
 }
 
 export interface IActiveTestWebhookPool {
     [key: string]: {
         nodes: IReactFlowNode[]
         edges: IReactFlowEdge[]
-        nodeData: INodeData
+        nodeData: INodeDataFromComponent
         webhookNodeId: string
         clientId: string
         isTestWorkflow: boolean

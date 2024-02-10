@@ -7,11 +7,14 @@ import Loadable from 'ui-component/loading/Loadable'
 // chatflows routing
 const Chatflows = Loadable(lazy(() => import('views/chatflows')))
 
-// workflo routing
+// workflow routing
 const Workflows = Loadable(lazy(() => import('views/workflows')))
 
 // marketplaces routing
 const Marketplaces = Loadable(lazy(() => import('views/marketplaces')))
+
+// variables routing
+const Executions = Loadable(lazy(() => import('views/executions')))
 
 // apikey routing
 const APIKey = Loadable(lazy(() => import('views/apikey')))
@@ -45,6 +48,10 @@ const MainRoutes = {
         {
             path: '/workflows',
             element: <Workflows />
+        },
+        {
+            path: '/executions',
+            element: <Executions />
         },
         {
             path: '/marketplaces',
