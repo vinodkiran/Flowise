@@ -112,7 +112,6 @@ const Executions = () => {
 
     useEffect(() => {
         getAllExecutionsApi.request()
-
     }, [])
 
     useEffect(() => {

@@ -160,7 +160,7 @@ const CredentialInput = ({
             if (getRegisteredCredentialsApi.data.length) {
                 for (let i = 0; i < getRegisteredCredentialsApi.data.length; i += 1) {
                     credentialOptions.push({
-                        _id: getRegisteredCredentialsApi.data[i]._id,
+                        id: getRegisteredCredentialsApi.data[i].id,
                         name: getRegisteredCredentialsApi.data[i].name
                     })
                 }
@@ -178,7 +178,7 @@ const CredentialInput = ({
     // getCredentialParamsApi successful
     useEffect(() => {
         if (getCredentialParamsApi.data) {
-            const newCredentialParams = getCredentialParamsApi.data.credentials
+            const newCredentialParams = getCredentialParamsApi.data.inputs
 
             const credentialNameParam = {
                 label: 'Credential Name',
@@ -240,12 +240,12 @@ const CredentialInput = ({
                                     if (isAddNewCredential) {
                                         response = await credentialApi.createNewCredential(body)
                                     } else {
-                                        response = await credentialApi.updateCredential(values.registeredCredential._id, body)
+                                        response = await credentialApi.updateCredential(values.registeredCredential.id, body)
                                     }
                                     if (response.data) {
                                         // Open oAuth2 window
                                         if (values.credentialMethod.toLowerCase().includes('oauth2')) {
-                                            const oAuth2PopupURL = await oauth2Api.geOAuth2PopupURL(response.data._id)
+                                            const oAuth2PopupURL = await oauth2Api.geOAuth2PopupURL(response.data.id)
                                             const popUpWindow = openOAuth2PopUpWindow(oAuth2PopupURL.data)
 
                                             const oAuth2Completed = async (event) => {
@@ -255,7 +255,7 @@ const CredentialInput = ({
                                                     const submitValues = {
                                                         credentialMethod: values.credentialMethod,
                                                         registeredCredential: {
-                                                            _id: response.data._id,
+                                                            id: response.data.id,
                                                             name: response.data.name
                                                         },
                                                         submit: true
@@ -277,7 +277,7 @@ const CredentialInput = ({
                                         const submitValues = {
                                             credentialMethod: values.credentialMethod,
                                             registeredCredential: {
-                                                _id: response.data._id,
+                                                id: response.data.id,
                                                 name: response.data.name
                                             },
                                             submit: true
@@ -387,7 +387,7 @@ const CredentialInput = ({
                                             onChanged(overwriteValues)
                                             if (selectedCredential) {
                                                 if (selectedCredential.name !== ADD_NEW_CREDENTIAL) {
-                                                    const resp = await credentialApi.getSpecificCredential(selectedCredential._id)
+                                                    const resp = await credentialApi.getSpecificCredential(selectedCredential.id)
                                                     if (resp.data) {
                                                         const updateValues = {
                                                             ...overwriteValues,
@@ -439,13 +439,13 @@ const CredentialInput = ({
                                 </FormControl>
                             )}
 
-                            {values && values.registeredCredential && values.registeredCredential._id && (
+                            {values && values.registeredCredential && values.registeredCredential.id && (
                                 <Button
                                     sx={{ mb: 2 }}
                                     size='small'
                                     variant='outlined'
                                     startIcon={<IconTrash size={15} />}
-                                    onClick={() => onDeleteCredential(values.registeredCredential._id)}
+                                    onClick={() => onDeleteCredential(values.registeredCredential.id)}
                                 >
                                     Delete Credential
                                 </Button>

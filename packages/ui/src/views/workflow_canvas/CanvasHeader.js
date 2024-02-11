@@ -21,8 +21,8 @@ import {
 } from '@tabler/icons'
 
 // project imports
-import ExecutionsPopUp from 'views/executions/ExecutionPopUp'
-import Settings from 'views/settings'
+import ExecutionsPopUp from 'views/executions/ExecutionsPopUp'
+import WorkflowSettings from 'views/settings/workflowSettings'
 import SaveWorkflowDialog from 'ui-component/dialog/SaveWorkflowDialog'
 
 // API
@@ -343,7 +343,7 @@ const CanvasHeader = ({ workflow, handleSaveFlow, handleDeployWorkflow, handleSt
                     anchorEl={viewExecutionRef.current}
                 />
             )}
-            <Settings
+            <WorkflowSettings
                 workflow={workflow}
                 isSettingsOpen={isSettingsOpen}
                 anchorEl={settingsRef.current}

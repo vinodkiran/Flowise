@@ -231,12 +231,7 @@ export class App {
         }
         predictionRoutes.configureRoutes()
         new ChatRoutes(this.app).configureRoutes()
-        let workflowRoutes = new WorkflowRoutes(
-            this.app,
-            this.activeTestTriggerPool,
-            this.activeTestWebhookPool,
-            this.deployedWorkflowsPool
-        )
+        let workflowRoutes = new WorkflowRoutes(this.app)
         workflowRoutes.configureRoutes()
         if (socketIO) {
             workflowRoutes.socketIO = socketIO

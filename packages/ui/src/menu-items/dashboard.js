@@ -42,7 +42,7 @@ const dashboard = {
             title: 'Executions',
             type: 'item',
             url: '/executions',
-            icon: icons.IconHierarchy3,
+            icon: icons.IconListCheck,
             breadcrumbs: true
         },
         {

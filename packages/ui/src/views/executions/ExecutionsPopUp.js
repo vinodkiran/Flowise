@@ -206,7 +206,9 @@ const ExecutionsPopUp = ({ workflowShortId, execution, executionCount, isExecuti
                                     </Stack>
                                 </Box>
                                 <PerfectScrollbar style={{ height: '100%', maxHeight: 'calc(100vh - 250px)', overflowX: 'hidden' }}>
-                                    {executionCount === 0 && execution.length === 0 && <Box sx={{ p: 2 }}>No executions yet</Box>}
+                                    {executionCount === 0 && (!execution || execution.length === 0) && (
+                                        <Box sx={{ p: 2 }}>No executions yet</Box>
+                                    )}
 
                                     {executionCount > 0 && execution.length > 0 && (
                                         <Box sx={{ p: 2 }}>

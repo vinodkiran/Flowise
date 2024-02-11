@@ -94,5 +94,20 @@ export class CredentialRoutes extends AbstractRoutes {
             const results = await this.AppDataSource.getRepository(Credential).delete({ id: req.params.id })
             return res.json(results)
         })
+
+        // Get node credential via specific nodeCredentialName
+        this.app.get('/api/v1/node-credentials/:nodeCredentialName', async (req: Request, res: Response) => {
+            const credentials = []
+
+            for (const credName in this.nodesPool.componentCredentials) {
+                credentials.push(this.nodesPool.componentCredentials[credName])
+            }
+
+            const cred = credentials.find((crd) => crd.name === req.params.nodeCredentialName)
+            if (cred === undefined) {
+                throw new Error(`Credential ${req.params.nodeCredentialName} not found`)
+            }
+            return res.json(cred)
+        })
     }
 }

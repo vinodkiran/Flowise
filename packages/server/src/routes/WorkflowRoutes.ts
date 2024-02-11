@@ -35,9 +35,6 @@ import { DataSource } from 'typeorm'
 import { decryptCredentialData, getEncryptionKey } from '../utils'
 import { Credential } from '../database/entities/Credential'
 import { Server } from 'socket.io'
-import { ActiveTestTriggerPool } from '../workflow/ActiveTestTriggerPool'
-import { ActiveTestWebhookPool } from '../workflow/ActiveTestWebhookPool'
-import { DeployedWorkflowPool } from '../workflow/DeployedWorkflowPool'
 import { Webhook } from '../database/entities/Webhook'
 import { Execution } from '../database/entities/Execution'
 
@@ -51,20 +48,8 @@ export class WorkflowRoutes extends AbstractRoutes {
     }
     private _socketIO: Server
 
-    private readonly activeTestTriggerPool: ActiveTestTriggerPool
-    private readonly activeTestWebhookPool: ActiveTestWebhookPool
-    private readonly deployedWorkflowsPool: DeployedWorkflowPool
-
-    constructor(
-        app: express.Application,
-        activeTestTriggerPool: ActiveTestTriggerPool,
-        activeTestWebhookPool: ActiveTestWebhookPool,
-        deployedWorkflowsPool: DeployedWorkflowPool
-    ) {
+    constructor(app: express.Application) {
         super(app)
-        this.activeTestTriggerPool = activeTestTriggerPool
-        this.activeTestWebhookPool = activeTestWebhookPool
-        this.deployedWorkflowsPool = deployedWorkflowsPool
     }
 
     configureRoutes() {
@@ -93,13 +78,32 @@ export class WorkflowRoutes extends AbstractRoutes {
         // Get all workflows
         this.app.get('/api/v1/workflows', async (_: Request, res: Response) => {
             const workflows = await this.AppDataSource.getRepository(WorkFlow).find()
-            return res.json(workflows)
+            const response: IWorkflowResponse[] = []
+            for (const workflow of workflows) {
+                let executionCount = await this.AppDataSource.getRepository(Execution).count({
+                    where: { workflowShortId: workflow.shortId }
+                })
+                response.push({
+                    ...workflow,
+                    executionCount
+                })
+            }
+            return res.json(response)
         })
 
         //Get specific workflow via shortId
         this.app.get('/api/v1/workflows/:shortId', async (req: Request, res: Response) => {
             const workflow = await this.AppDataSource.getRepository(WorkFlow).findOneBy({ shortId: req.params.shortId })
-            if (workflow) return res.json(workflow)
+            if (workflow) {
+                let executionCount = await this.AppDataSource.getRepository(Execution).count({
+                    where: { workflowShortId: workflow.shortId }
+                })
+                let returnWorkflow: IWorkflowResponse = {
+                    ...workflow,
+                    executionCount
+                }
+                return res.json(returnWorkflow)
+            }
             return res.status(404).send(`Workflow ${req.params.shortId} not found`)
         })
 
