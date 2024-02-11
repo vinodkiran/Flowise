@@ -29,7 +29,7 @@ import * as React from 'react'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import { StyledButton } from '../../ui-component/button/StyledButton'
 
-// ==============================|| CHATFLOWS ||============================== //
+// ==============================|| WORKFLOWS ||============================== //
 
 const Workflows = () => {
     const navigate = useNavigate()

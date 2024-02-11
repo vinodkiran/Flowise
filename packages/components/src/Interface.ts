@@ -153,7 +153,7 @@ export interface INode extends INodeProperties {
         createWebhook: (nodeData: INodeData, webhookFullUrl: string) => Promise<string | undefined>
         deleteWebhook: (nodeData: INodeData, webhookId: string) => Promise<boolean>
     }
-    runWorkflow?(nodeData: INodeData): Promise<INodeExecutionData[] | null>
+    runWorkflow?(nodeData: INodeData, options?: ICommonObject): Promise<INodeExecutionData[] | null>
     runTrigger?(nodeData: INodeData): Promise<void>
     removeTrigger?(nodeData: INodeData): Promise<void>
     runWebhook?(nodeData: INodeData): Promise<IWebhookNodeExecutionData[] | null>

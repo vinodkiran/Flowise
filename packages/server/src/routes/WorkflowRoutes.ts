@@ -22,7 +22,7 @@ import {
     IWorkflowResponse,
     WebhookMethod
 } from '../Interface'
-import { INodeData as INodeDataFromComponent, INodeData, INodeExecutionData } from 'flowise-components'
+import { ICommonObject, IDatabaseEntity, INodeData as INodeDataFromComponent, INodeData, INodeExecutionData } from 'flowise-components'
 import {
     checkOAuth2TokenRefreshed,
     constructGraphs,
@@ -37,6 +37,15 @@ import { Credential } from '../database/entities/Credential'
 import { Server } from 'socket.io'
 import { Webhook } from '../database/entities/Webhook'
 import { Execution } from '../database/entities/Execution'
+import { Variable } from '../database/entities/Variable'
+
+export const databaseEntities: IDatabaseEntity = {
+    WorkFlow: WorkFlow,
+    Credential: Credential,
+    Webhook: Webhook,
+    Execution: Execution,
+    Variable: Variable
+}
 
 export class WorkflowRoutes extends AbstractRoutes {
     get socketIO(): Server {
@@ -314,8 +323,11 @@ export class WorkflowRoutes extends AbstractRoutes {
                     if (nodeType === 'action') {
                         let results: INodeExecutionData[] = []
                         const reactFlowNodeData: INodeData[] = resolveVariables(nodeData, nodes)
+                        let options: ICommonObject = {}
+                        options.appDataSource = this.AppDataSource
+                        options.databaseEntities = databaseEntities
                         for (let i = 0; i < reactFlowNodeData.length; i += 1) {
-                            const result = await nodeInstance.runWorkflow!.call(nodeInstance, reactFlowNodeData[i])
+                            const result = await nodeInstance.runWorkflow!.call(nodeInstance, reactFlowNodeData[i], options)
                             checkOAuth2TokenRefreshed(result, reactFlowNodeData[i])
                             if (result) results.push(...result)
                         }

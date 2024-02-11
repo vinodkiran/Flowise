@@ -2,6 +2,7 @@ import { ICommonObject, INode, INodeData, INodeExecutionData, INodeParams, NodeT
 import { handleErrorMessage, returnNodeExecutionData } from '../../../src/workflow.utils'
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { getPrompts, setPrompt } from './constants'
+import { getCredentialData } from '../../../src'
 
 class OpenAIChatGPT implements INode {
     label: string
@@ -73,7 +74,7 @@ class OpenAIChatGPT implements INode {
         ] as INodeParams[]
     }
 
-    async runWorkflow(nodeData: INodeData): Promise<INodeExecutionData[] | null> {
+    async runWorkflow(nodeData: INodeData, options: ICommonObject): Promise<INodeExecutionData[] | null> {
         const inputParametersData = nodeData.inputParameters
         const credentials = nodeData.credentials
 
@@ -85,9 +86,12 @@ class OpenAIChatGPT implements INode {
             throw new Error('Missing credential')
         }
 
+        const credentialData = await getCredentialData(credentials.registeredCredential.id ?? '', options)
+        const openAIApiKey = credentialData['openAIApiKey'] as string
+
         const returnData: ICommonObject[] = []
         const model = inputParametersData.model as string
-
+        //credentials.registeredCredential.id
         let responseData: any
         let url = 'https://api.openai.com/v1/chat/completions'
 
@@ -115,7 +119,7 @@ class OpenAIChatGPT implements INode {
                 data,
                 headers: {
                     'Content-Type': 'application/json; charset=utf-8',
-                    Authorization: `Bearer ${credentials!.apiKey}`
+                    Authorization: `Bearer ${openAIApiKey}`
                 }
             }
             const response = await axios(axiosConfig)
