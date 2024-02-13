@@ -94,7 +94,8 @@ export class WorkflowRoutes extends AbstractRoutes {
                 })
                 response.push({
                     ...workflow,
-                    executionCount
+                    executionCount,
+                    execution: []
                 })
             }
             return res.json(response)
@@ -104,12 +105,13 @@ export class WorkflowRoutes extends AbstractRoutes {
         this.app.get('/api/v1/workflows/:shortId', async (req: Request, res: Response) => {
             const workflow = await this.AppDataSource.getRepository(WorkFlow).findOneBy({ shortId: req.params.shortId })
             if (workflow) {
-                let executionCount = await this.AppDataSource.getRepository(Execution).count({
+                let executions = await this.AppDataSource.getRepository(Execution).find({
                     where: { workflowShortId: workflow.shortId }
                 })
                 let returnWorkflow: IWorkflowResponse = {
                     ...workflow,
-                    executionCount
+                    executionCount: executions.length,
+                    execution: executions
                 }
                 return res.json(returnWorkflow)
             }
@@ -166,12 +168,14 @@ export class WorkflowRoutes extends AbstractRoutes {
             const result = await this.AppDataSource.getRepository(WorkFlow).save(workflow)
 
             if (result) {
-                let executionCount = await this.AppDataSource.getRepository(Execution).count({
-                    where: { workflowShortId: result.shortId }
+                let executions = await this.AppDataSource.getRepository(Execution).find({
+                    where: { workflowShortId: workflow.shortId }
                 })
+
                 const returnWorkflow: IWorkflowResponse = {
                     ...result,
-                    executionCount
+                    executionCount: executions.length,
+                    execution: executions
                 }
                 if (returnWorkflow.deployed && returnWorkflow.flowData) {
                     try {
@@ -282,12 +286,14 @@ export class WorkflowRoutes extends AbstractRoutes {
                 this.AppDataSource.getRepository(WorkFlow).merge(workflow, updateWorkflow)
                 const result = await this.AppDataSource.getRepository(WorkFlow).save(workflow)
                 if (result) {
-                    let executionCount = await this.AppDataSource.getRepository(Execution).count({
-                        where: { workflowShortId: result.shortId }
+                    let executions = await this.AppDataSource.getRepository(Execution).find({
+                        where: { workflowShortId: workflow.shortId }
                     })
+
                     const returnWorkflow: IWorkflowResponse = {
-                        ...workflow,
-                        executionCount
+                        ...result,
+                        executionCount: executions.length,
+                        execution: executions
                     }
                     return res.json(returnWorkflow)
                 }
@@ -487,7 +493,11 @@ export class WorkflowRoutes extends AbstractRoutes {
                     )
                 } else if (nodeData.type === 'action') {
                     const actionNodeInstance = componentNodes[nodeData.name] as INode
-                    const result = await actionNodeInstance.runWorkflow!.call(actionNodeInstance, nodeData)
+                    let options: ICommonObject = {}
+                    options.appDataSource = this.AppDataSource
+                    options.databaseEntities = databaseEntities
+
+                    const result = await actionNodeInstance.runWorkflow!.call(actionNodeInstance, nodeData, options)
                     checkOAuth2TokenRefreshed(result, nodeData)
 
                     const newWorkflowExecutedData = {
@@ -527,13 +537,20 @@ export class WorkflowRoutes extends AbstractRoutes {
             /* TODO: Query using relations */
             const executions: IExecution[] = await this.AppDataSource.getRepository(Execution).find()
             let response: IExecutionResponse[] = []
-            executions.map(async (execution) => {
-                let workflow = await this.AppDataSource.getRepository(WorkFlow).findOneBy({ shortId: execution.workflowShortId })
+            for (let i = 0; i < executions.length; i++) {
+                let workflow = await this.AppDataSource.getRepository(WorkFlow).findOneBy({ shortId: executions[i].workflowShortId })
                 response.push({
-                    ...execution,
+                    ...executions[i],
                     workflow: workflow as IWorkFlow
                 })
-            })
+            }
+            // executions.map(async (execution) => {
+            //     let workflow = await this.AppDataSource.getRepository(WorkFlow).findOneBy({ shortId: execution.workflowShortId })
+            //     response.push({
+            //         ...execution,
+            //         workflow: workflow as IWorkFlow
+            //     })
+            // })
             return res.json(response)
         })
 
@@ -850,9 +867,12 @@ export const testWorkflow = async (
                 const reactFlowNodeData: INodeData[] = resolveVariables(reactFlowNode.data, reactFlowNodes)
 
                 let results: INodeExecutionData[] = []
+                let options: ICommonObject = {}
+                options.appDataSource = dataSource
+                options.databaseEntities = databaseEntities
 
                 for (let i = 0; i < reactFlowNodeData.length; i += 1) {
-                    const result = await newNodeInstance.runWorkflow!.call(newNodeInstance, reactFlowNodeData[i])
+                    const result = await newNodeInstance.runWorkflow!.call(newNodeInstance, reactFlowNodeData[i], options)
                     checkOAuth2TokenRefreshed(result, reactFlowNodeData[i])
                     if (result) results.push(...result)
                 }

@@ -6,7 +6,6 @@ export class FullWorkflow1707506673968 implements MigrationInterface {
             `CREATE TABLE IF NOT EXISTS \`execution\` (
                 \`id\` varchar(36) NOT NULL,
                 \`shortId\` varchar(255) NOT NULL,
-                \`name\` varchar(255) NOT NULL,
                 \`executionData\` text NOT NULL,
                 \`state\` text NOT NULL,
                 \`workflowShortId\` varchar(255) NOT NULL,

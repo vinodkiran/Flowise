@@ -167,7 +167,7 @@ const Executions = () => {
                                         >
                                             {exec.shortId}
                                         </TableCell>
-                                        <TableCell>{exec.workflow[0].name}</TableCell>
+                                        <TableCell>{exec.workflow.name}</TableCell>
                                         <TableCell>
                                             <Chip
                                                 sx={{

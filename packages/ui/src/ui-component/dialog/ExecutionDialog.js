@@ -147,7 +147,7 @@ const ExecutionDialog = ({ show, dialogProps, onCancel }) => {
                                                     <Stack sx={{ mb: -1, alignItems: 'center' }} direction='row'>
                                                         <Typography variant='h5'>Workflow:</Typography>
                                                         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                                        <Typography variant='h5'>{dialogProps.execution.workflow[0].name}</Typography>
+                                                        <Typography variant='h5'>{dialogProps.execution.workflow.name}</Typography>
                                                     </Stack>
                                                     <Stack sx={{ mt: 2, mb: -1, alignItems: 'center' }} direction='row'>
                                                         <Typography variant='h5'>Started At:</Typography>

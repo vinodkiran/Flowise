@@ -224,11 +224,24 @@ export class DeployedWorkflowPool {
             const controller = new AbortController()
             const { signal } = controller
 
-            let childpath = pathJoin(__dirname, '..', 'dist', 'ChildProcess.js')
-            if (!fs.existsSync(childpath)) childpath = 'ChildProcess.ts'
-
+            let childpath = pathJoin(__dirname, '..', 'workflow', 'ChildProcess.js')
+            if (!fs.existsSync(childpath)) {
+                childpath = 'ChildProcess.ts'
+            }
+            console.log(`childpath: ${childpath}`)
             // @ts-ignore
-            const childProcess = fork(childpath, [], { signal })
+            const childProcess = fork(childpath, [], { signal, stdio: 'overlapped' })
+
+            childProcess?.stdout?.setEncoding('utf8')
+            childProcess?.stdout?.on('data', function (data) {
+                //Here is where the output goes
+                console.log('stdout: ' + data)
+            })
+            childProcess?.stderr?.setEncoding('utf8')
+            childProcess?.stderr?.on('data', function (data) {
+                //Here is where the output goes
+                console.log('**2**stderr: ' + data)
+            })
 
             const workflowExecutedData = [
                 {
@@ -260,12 +273,24 @@ export class DeployedWorkflowPool {
                 graph,
                 workflowExecutedData
             } as IRunWorkflowMessageValue
+            childProcess.on('close', (code) => {
+                console.log(`child process close all stdio with code ${code}`)
+            })
+
+            childProcess.on('exit', (code) => {
+                console.log(`child process exited with code ${code}`)
+                console.log(`child process killed ${childProcess.killed}`)
+                console.log(`child process pid ${childProcess.pid}`)
+            })
+            console.log(`child process before start send message`)
             childProcess.send({ key: 'start', value } as IChildProcessMessage)
-
+            console.log(`child process after start send message`)
             let childProcessTimeout: NodeJS.Timeout
-
+            console.log(`before return`)
             return new Promise((resolve, _) => {
                 childProcess.on('message', async (message: IChildProcessMessage) => {
+                    console.log(`child process on message: ${message.key}`)
+
                     if (message.key === 'finish') {
                         let updatedWorkflowExecutedData = message.value as IWorkflowExecutedData[]
                         updatedWorkflowExecutedData = updatedWorkflowExecutedData.filter((execData) => execData.nodeId !== startingNodeId)

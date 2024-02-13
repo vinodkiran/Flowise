@@ -32,7 +32,11 @@ export class ComponentRoutes extends AbstractRoutes {
                 const node = this.nodesPool.componentNodes[nodeName]
                 // type parameter is only available for workflow nodes
                 if (node.type === 'action' || node.type === 'trigger' || node.type === 'webhook') {
-                    const clonedNode = cloneDeep(node)
+                    const clonedNode = JSON.parse(
+                        JSON.stringify(node, (key, val) => {
+                            if (key !== 'cronJobs' && key !== 'providers') return val
+                        })
+                    )
                     returnData.push(clonedNode)
                 }
             }
@@ -66,7 +70,12 @@ export class ComponentRoutes extends AbstractRoutes {
         // Get specific component node via name
         this.app.get('/api/v1/nodes/:name', (req: Request, res: Response) => {
             if (Object.prototype.hasOwnProperty.call(this.nodesPool.componentNodes, req.params.name)) {
-                return res.json(this.nodesPool.componentNodes[req.params.name])
+                const clonedNode = JSON.parse(
+                    JSON.stringify(this.nodesPool.componentNodes[req.params.name], (key, val) => {
+                        if (key !== 'cronJobs' && key !== 'providers') return val
+                    })
+                )
+                return res.json(clonedNode)
             } else {
                 throw new Error(`Node ${req.params.name} not found`)
             }

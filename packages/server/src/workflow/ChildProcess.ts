@@ -19,6 +19,7 @@ export class ChildProcess {
      */
     static async stopChildProcess() {
         setTimeout(() => {
+            console.log('child process stopped -- 5 secs timeout')
             process.exit(0)
         }, 50000)
     }
@@ -31,6 +32,7 @@ export class ChildProcess {
     async runWorkflow(messageValue: IRunWorkflowMessageValue): Promise<void> {
         process.on('SIGTERM', ChildProcess.stopChildProcess)
         process.on('SIGINT', ChildProcess.stopChildProcess)
+        console.log(`start of runWorkflow`)
 
         await sendToParentProcess('start', '_')
 
@@ -43,22 +45,29 @@ export class ChildProcess {
         const exploredNode = {} as IExploredNode
         // In the case of infinite loop, only max 3 loops will be executed
         const maxLoop = 3
+        console.log('starting....')
 
         for (let i = 0; i < startingNodeIds.length; i += 1) {
             nodeQueue.push({ nodeId: startingNodeIds[i], depth: 0 })
             exploredNode[startingNodeIds[i]] = { remainingLoop: maxLoop, lastSeenDepth: 0 }
         }
+        console.log('nodeQueue.length....', nodeQueue.length)
 
         while (nodeQueue.length) {
             const { nodeId, depth } = nodeQueue.shift() as INodeQueue
             const ignoreNodeIds: string[] = []
+            console.log('nodeId....', nodeId)
 
             if (!startingNodeIds.includes(nodeId)) {
                 const reactFlowNode = reactFlowNodes.find((nd) => nd.id === nodeId)
+                console.log('reactFlowNode ===  ', reactFlowNode)
+
                 if (!reactFlowNode || reactFlowNode === undefined) continue
+                console.log('after reactFlowNode ===  ', reactFlowNode)
 
                 try {
                     const nodeInstanceFilePath = componentNodes[reactFlowNode.data.name].filePath
+                    console.log('nodeInstanceFilePath ===  ', nodeInstanceFilePath)
                     const nodeModule = await import(nodeInstanceFilePath)
                     const newNodeInstance = new nodeModule.nodeClass()
 
@@ -68,9 +77,13 @@ export class ChildProcess {
 
                     let results: INodeExecutionData[] = []
 
+                    console.log('before loop ')
                     for (let i = 0; i < reactFlowNodeData.length; i += 1) {
-                        const result = await newNodeInstance.run!.call(newNodeInstance, reactFlowNodeData[i])
+                        console.log('trying to call :: ' + reactFlowNode.data.name)
+                        const result = await newNodeInstance.runWorkflow!.call(newNodeInstance, reactFlowNodeData[i])
+                        console.log('after call :: ' + reactFlowNode.data.name)
                         checkOAuth2TokenRefreshed(result, reactFlowNodeData[i], childAppDataSource)
+                        console.log('checkOAuth2TokenRefreshed :: ' + reactFlowNode.data.name)
                         if (result) results.push(...result)
                     }
 
@@ -358,10 +371,14 @@ async function sendToParentProcess(key: string, value: any): Promise<void> {
 }
 
 const childProcess = new ChildProcess()
+console.log('childProcess global before start')
 
 process.on('message', async (message: IChildProcessMessage) => {
+    console.log('message received', message.key, message.value)
     if (message.key === 'start') {
+        console.log('message received before start')
         await childProcess.runWorkflow(message.value)
+        console.log('message received after start')
         process.exit()
     }
 })

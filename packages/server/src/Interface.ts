@@ -287,7 +287,7 @@ export type WebhookMethod = 'GET' | 'POST'
  * Others
  */
 export interface IWorkflowResponse extends IWorkFlow {
-    execution?: IExecution
+    execution: IExecution[]
     executionCount: number
 }
 

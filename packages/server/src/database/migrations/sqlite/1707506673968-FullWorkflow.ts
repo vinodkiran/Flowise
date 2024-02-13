@@ -7,7 +7,6 @@ export class FullWorkflow1707506673968 implements MigrationInterface {
                 "id" varchar PRIMARY KEY NOT NULL, 
                 "shortId" varchar NOT NULL, 
                 "workflowShortId" varchar NOT NULL, 
-                "name" varchar NOT NULL, 
                 "state" varchar NOT NULL, 
                 "executionData" text NOT NULL, 
                 "deployed" boolean, 
@@ -21,7 +20,7 @@ export class FullWorkflow1707506673968 implements MigrationInterface {
                 "webhookEndpoint" varchar NOT NULL, 
                 "httpMethod" varchar NOT NULL, 
                 "workflowShortId" varchar NOT NULL, 
-                "webhookId" varchar NOT NULL, 
+                "webhookId" varchar NULL, 
                 "createdDate" datetime NOT NULL DEFAULT (datetime('now')), 
                 "updatedDate" datetime NOT NULL DEFAULT (datetime('now')));`
         )
