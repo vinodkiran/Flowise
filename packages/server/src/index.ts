@@ -5,7 +5,7 @@ import cors from 'cors'
 import http from 'http'
 import * as fs from 'fs'
 import basicAuth from 'express-basic-auth'
-import { Server } from 'socket.io'
+import { Server, Socket } from 'socket.io'
 import logger, { expressRequestLogger } from './utils/logger'
 import { IChatFlow } from './Interface'
 import { getNodeModulesPackagePath, getEncryptionKey } from './utils'
@@ -73,30 +73,7 @@ export class App {
                 // Initialize chatflow pool
                 this.chatflowPool = new ChatflowPool()
 
-                // Initialize API keys
-                await getAPIKeys()
-
-                // Initialize encryption key
-                await getEncryptionKey()
-
-                // Initialize Rate Limit
-                const AllChatFlow: IChatFlow[] = await getAllChatFlow()
-                await initializeRateLimiter(AllChatFlow)
-
-                // Initialize cache pool
-                this.cachePool = new CachePool()
-
-                // Initialize activeTestTriggerPool instance
-                this.activeTestTriggerPool = new ActiveTestTriggerPool()
-
-                // Initialize activeTestWebhookPool instance
-                this.activeTestWebhookPool = new ActiveTestWebhookPool()
-
-                // Initialize deployed worklows instances
-                this.deployedWorkflowsPool = new DeployedWorkflowPool()
-                await this.deployedWorkflowsPool.initialize(this.AppDataSource, this.nodesPool.componentNodes)
-
-                // Initialize localtunnel
+                // Initialize local tunnel
                 if (process.env.ENABLE_TUNNEL === 'true') {
                     const subdomain = getRandomSubdomain()
 
@@ -120,6 +97,29 @@ export class App {
                         console.info('🌐[server]: TUNNEL_BASE_URL = ', process.env.TUNNEL_BASE_URL)
                     }
                 }
+
+                // Initialize API keys
+                await getAPIKeys()
+
+                // Initialize encryption key
+                await getEncryptionKey()
+
+                // Initialize Rate Limit
+                const AllChatFlow: IChatFlow[] = await getAllChatFlow()
+                await initializeRateLimiter(AllChatFlow)
+
+                // Initialize cache pool
+                this.cachePool = new CachePool()
+
+                // Initialize activeTestTriggerPool instance
+                this.activeTestTriggerPool = new ActiveTestTriggerPool()
+
+                // Initialize activeTestWebhookPool instance
+                this.activeTestWebhookPool = new ActiveTestWebhookPool()
+
+                // Initialize deployed workflows instances
+                this.deployedWorkflowsPool = new DeployedWorkflowPool()
+                await this.deployedWorkflowsPool.initialize(this.AppDataSource, this.nodesPool.componentNodes)
             })
             .catch((err) => {
                 logger.error('❌ [server]: Error during Data Source initialization:', err)
@@ -256,6 +256,15 @@ export class App {
     async stopApp() {
         try {
             const removePromises: any[] = []
+            // Remove deployed workflows pools
+            if (this.deployedWorkflowsPool) removePromises.push(this.deployedWorkflowsPool.removeAll(this.nodesPool.componentNodes))
+
+            // Remove test trigger pools
+            if (this.activeTestTriggerPool) removePromises.push(this.activeTestTriggerPool.removeAll(this.nodesPool.componentNodes))
+
+            // Remove test webhook pools
+            if (this.activeTestWebhookPool) removePromises.push(this.activeTestWebhookPool.removeAll(this.nodesPool.componentNodes))
+
             await Promise.all(removePromises)
         } catch (e) {
             logger.error(`❌[server]: Flowise Server shut down error: ${e}`)
@@ -281,6 +290,13 @@ export async function start(): Promise<void> {
         }
     })
 
+    io.on('connection', (socket: Socket) => {
+        console.info('👥[server]: client connected: ', socket.id)
+
+        socket.on('disconnect', (reason) => {
+            console.info('👤[server]: client disconnected = ', reason)
+        })
+    })
     await serverApp.initDatabase()
     await serverApp.config(io)
 

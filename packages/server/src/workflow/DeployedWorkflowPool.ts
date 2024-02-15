@@ -221,27 +221,27 @@ export class DeployedWorkflowPool {
             // Fetch latest nodes and edges from DB
             const { reactFlowNodes, reactFlowEdges } = await this.prepareDataForChildProcess(workflowShortId)
 
-            const controller = new AbortController()
-            const { signal } = controller
-
+            const abortController = new AbortController()
+            //const { signal } = controller;
             let childpath = pathJoin(__dirname, '..', 'workflow', 'ChildProcess.js')
             if (!fs.existsSync(childpath)) {
                 childpath = 'ChildProcess.ts'
             }
-            console.log(`childpath: ${childpath}`)
-            // @ts-ignore
-            const childProcess = fork(childpath, [], { signal, stdio: 'overlapped' })
+            console.log(`childpath: ${childpath} :: ${fs.existsSync(childpath)}`)
 
-            childProcess?.stdout?.setEncoding('utf8')
-            childProcess?.stdout?.on('data', function (data) {
-                //Here is where the output goes
-                console.log('stdout: ' + data)
-            })
-            childProcess?.stderr?.setEncoding('utf8')
-            childProcess?.stderr?.on('data', function (data) {
-                //Here is where the output goes
-                console.log('**2**stderr: ' + data)
-            })
+            // @ts-ignore
+            const childProcess = fork(childpath, [], { signal: abortController.signal, stdio: ['inherit', 'inherit', 'inherit', 'ipc'] })
+
+            // childProcess?.stdout?.setEncoding('utf8')
+            // childProcess?.stdout?.on('data', function (data) {
+            //     //Here is where the output goes
+            //     console.log('stdout: ' + data)
+            // })
+            // childProcess?.stderr?.setEncoding('utf8')
+            // childProcess?.stderr?.on('data', function (data) {
+            //     //Here is where the output goes
+            //     console.log('**2**stderr: ' + data)
+            // })
 
             const workflowExecutedData = [
                 {
@@ -250,7 +250,7 @@ export class DeployedWorkflowPool {
                     data: startingNodeExecutedData
                 }
             ] as IWorkflowExecutedData[]
-            const newExecution = await this.addExecution(workflowShortId, workflowExecutedData, controller)
+            const newExecution = await this.addExecution(workflowShortId, workflowExecutedData, abortController)
             const newExecutionShortId = newExecution === undefined ? '' : newExecution.shortId
 
             // Remove cronJobs and providers to avoid error of converting circular structure to JSON
@@ -273,20 +273,9 @@ export class DeployedWorkflowPool {
                 graph,
                 workflowExecutedData
             } as IRunWorkflowMessageValue
-            childProcess.on('close', (code) => {
-                console.log(`child process close all stdio with code ${code}`)
-            })
-
-            childProcess.on('exit', (code) => {
-                console.log(`child process exited with code ${code}`)
-                console.log(`child process killed ${childProcess.killed}`)
-                console.log(`child process pid ${childProcess.pid}`)
-            })
-            console.log(`child process before start send message`)
-            childProcess.send({ key: 'start', value } as IChildProcessMessage)
-            console.log(`child process after start send message`)
+            let rVal = childProcess.send({ key: 'start', value } as IChildProcessMessage)
+            console.log(`child process send: ${rVal}`)
             let childProcessTimeout: NodeJS.Timeout
-            console.log(`before return`)
             return new Promise((resolve, _) => {
                 childProcess.on('message', async (message: IChildProcessMessage) => {
                     console.log(`child process on message: ${message.key}`)
@@ -387,9 +376,10 @@ export class DeployedWorkflowPool {
                 const workflowAbortController = this.deployedWorkflows[workflowShortId].abortController
                 delete this.deployedWorkflows[workflowShortId]
                 try {
+                    console.log('aborting workflow')
                     workflowAbortController?.abort()
                 } catch (e) {
-                    // console.error(e);
+                    console.error(e)
                 }
             }
         }

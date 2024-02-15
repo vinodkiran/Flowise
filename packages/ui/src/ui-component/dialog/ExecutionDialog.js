@@ -35,6 +35,7 @@ const ExecutionDialog = ({ show, dialogProps, onCancel }) => {
 
     const theme = useTheme()
     const customization = useSelector((state) => state.customization)
+    const [expanded, setExpanded] = useState(false)
 
     const [showHTMLDialog, setShowHTMLDialog] = useState(false)
     const [HTMLDialogProps, setHTMLDialogProps] = useState({})

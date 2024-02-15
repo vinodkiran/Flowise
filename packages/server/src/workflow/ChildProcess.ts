@@ -14,6 +14,9 @@ import { init } from '../DataSource'
 import { decryptNodeCredentials } from '../routes/WorkflowRoutes'
 
 export class ChildProcess {
+    constructor() {
+        console.log('childProcess constructor')
+    }
     /**
      * Stop child process after 5 secs timeout
      */
@@ -159,8 +162,10 @@ export class ChildProcess {
  * @returns {DataSource}
  */
 async function initDB(): Promise<DataSource> {
+    console.log('childProcess initializeDB before init')
     const childAppDataSource = await init()
-    return await childAppDataSource.initialize()
+    console.log('childProcess before initialize')
+    return childAppDataSource.initialize()
 }
 
 /**
@@ -353,6 +358,7 @@ function resolveVariables(reactFlowNodeData: INodeData, workflowExecutedData: IW
  * @returns {Promise<void>}
  */
 async function sendToParentProcess(key: string, value: any): Promise<void> {
+    console.log('**** sendToParentProcess')
     // tslint:disable-line:no-any
     return new Promise((resolve, reject) => {
         process.send!(
@@ -371,7 +377,7 @@ async function sendToParentProcess(key: string, value: any): Promise<void> {
 }
 
 const childProcess = new ChildProcess()
-console.log('childProcess global before start')
+console.log('childProcess created')
 
 process.on('message', async (message: IChildProcessMessage) => {
     console.log('message received', message.key, message.value)
