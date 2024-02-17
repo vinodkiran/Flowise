@@ -25,6 +25,11 @@ const Credentials = Loadable(lazy(() => import('views/credentials')))
 // variables routing
 const Variables = Loadable(lazy(() => import('views/variables')))
 
+// Eval/Metrics routing
+const EvalMetrics = Loadable(lazy(() => import('views/evals_metrics')))
+const EvalBenchmarking = Loadable(lazy(() => import('views/evals_benchmarking')))
+const EvalRagas = Loadable(lazy(() => import('views/evals_ragas')))
+
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -62,6 +67,18 @@ const MainRoutes = {
         {
             path: '/variables',
             element: <Variables />
+        },
+        {
+            path: '/metrics',
+            element: <EvalMetrics />
+        },
+        {
+            path: '/benchmarking',
+            element: <EvalBenchmarking />
+        },
+        {
+            path: '/ragas',
+            element: <EvalRagas />
         }
     ]
 }

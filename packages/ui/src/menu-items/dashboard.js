@@ -1,8 +1,19 @@
 // assets
-import { IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot, IconVariable } from '@tabler/icons'
+import {
+    IconHierarchy,
+    IconBuildingStore,
+    IconKey,
+    IconTool,
+    IconLock,
+    IconRobot,
+    IconVariable,
+    IconGraph,
+    IconAB,
+    IconAbacus
+} from '@tabler/icons'
 
 // constant
-const icons = { IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot, IconVariable }
+const icons = { IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot, IconVariable, IconGraph, IconAB, IconAbacus }
 
 // ==============================|| DASHBOARD MENU ITEMS ||============================== //
 
@@ -66,6 +77,37 @@ const dashboard = {
             url: '/apikey',
             icon: icons.IconKey,
             breadcrumbs: true
+        },
+        {
+            id: 'evals',
+            title: 'Metrics & Evaluations',
+            type: 'collapse',
+            children: [
+                {
+                    id: 'apikey',
+                    title: 'Metrics',
+                    type: 'item',
+                    url: '/metrics',
+                    icon: icons.IconGraph,
+                    breadcrumbs: true
+                },
+                {
+                    id: 'apikey',
+                    title: 'Benchmarking',
+                    type: 'item',
+                    url: '/benchmarking',
+                    icon: icons.IconAB,
+                    breadcrumbs: true
+                },
+                {
+                    id: 'apikey',
+                    title: 'RAGAS',
+                    type: 'item',
+                    url: '/ragas',
+                    icon: icons.IconAbacus,
+                    breadcrumbs: true
+                }
+            ]
         }
     ]
 }
