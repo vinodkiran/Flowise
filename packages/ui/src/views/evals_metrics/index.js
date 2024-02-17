@@ -10,6 +10,8 @@ import MainCard from 'ui-component/cards/MainCard'
 import { gridSpacing } from 'store/constant'
 import { StyledButton } from '../../ui-component/button/StyledButton'
 import MetricsItemCard from '../../ui-component/cards/MetricsItemCard'
+import { LatencyChart } from '../../ui-component/charts/LatencyChart'
+import { InferenceChart } from '../../ui-component/charts/InferenceChart'
 
 // API
 
@@ -64,34 +66,42 @@ const EvalMetrics = () => {
                     </Toolbar>
                 </Box>
                 <Divider />
-                <Grid container spacing={gridSpacing} sx={{ mt: 2, alignItems: 'center' }}>
-                    <Grid key='0' item lg={3} md={4} sm={6} xs={12}>
-                        <MetricsItemCard data={{ header: 'TOTAL INFERENCES', value: '41' }} />
+                <Stack flexDirection='row'>
+                    <Grid container spacing={gridSpacing} sx={{ mt: 2, alignItems: 'center' }}>
+                        <Grid key='0' item lg={3} md={4} sm={6} xs={12}>
+                            <Stack flexDirection='column' rowGap={2}>
+                                <MetricsItemCard
+                                    data={{ header: 'TOTAL INFERENCES', value: '41' }}
+                                    component={<InferenceChart sx={{ pt: 2 }} />}
+                                />
+                            </Stack>
+                        </Grid>
+                        <Grid key='1' item lg={3} md={4} sm={6} xs={12}>
+                            <Stack flexDirection='column' rowGap={2}>
+                                <MetricsItemCard
+                                    data={{ header: 'AVERAGE COST', value: '$5.8452' }}
+                                    component={<LatencyChart sx={{ pt: 2 }} />}
+                                />
+                            </Stack>
+                        </Grid>
+                        <Grid key='2' item lg={3} md={4} sm={6} xs={12}>
+                            <Stack flexDirection='column' rowGap={2}>
+                                <MetricsItemCard
+                                    data={{ header: 'TOTAL INFERENCES', value: '41' }}
+                                    component={<InferenceChart sx={{ pt: 2 }} />}
+                                />
+                            </Stack>
+                        </Grid>
+                        <Grid key='3' item lg={3} md={4} sm={6} xs={12}>
+                            <Stack flexDirection='column' rowGap={2}>
+                                <MetricsItemCard
+                                    data={{ header: 'AVERAGE COST', value: '$5.8452' }}
+                                    component={<LatencyChart sx={{ pt: 2 }} />}
+                                />
+                            </Stack>
+                        </Grid>
                     </Grid>
-                    <Grid key='1' item lg={3} md={4} sm={6} xs={12}>
-                        <MetricsItemCard data={{ header: 'AVERAGE COST', value: '$5.8452' }} />
-                    </Grid>
-                    <Grid key='2' item lg={3} md={4} sm={6} xs={12}>
-                        <MetricsItemCard data={{ header: 'AVERAGE LATENCY', value: '2345 ms' }} />
-                    </Grid>
-                    <Grid key='3' item lg={3} md={4} sm={6} xs={12}>
-                        <MetricsItemCard data={{ header: 'AVERAGE TOKEN USAGE', value: '421' }} />
-                    </Grid>
-                    {/*{!getAllAssistantsApi.loading &&*/}
-                    {/*    getAllAssistantsApi.data &&*/}
-                    {/*    getAllAssistantsApi.data.map((data, index) => (*/}
-                    {/*        <Grid key={index} item lg={3} md={4} sm={6} xs={12}>*/}
-                    {/*            <ItemCard*/}
-                    {/*                data={{*/}
-                    {/*                    name: JSON.parse(data.details)?.name,*/}
-                    {/*                    description: JSON.parse(data.details)?.instructions,*/}
-                    {/*                    iconSrc: data.iconSrc*/}
-                    {/*                }}*/}
-                    {/*                onClick={() => edit(data)}*/}
-                    {/*            />*/}
-                    {/*        </Grid>*/}
-                    {/*    ))}*/}
-                </Grid>
+                </Stack>
                 {/*{!getAllAssistantsApi.loading && (!getAllAssistantsApi.data || getAllAssistantsApi.data.length === 0) && (*/}
                 {/*    <Stack sx={{ alignItems: 'center', justifyContent: 'center' }} flexDirection='column'>*/}
                 {/*        <Box sx={{ p: 2, height: 'auto' }}>*/}

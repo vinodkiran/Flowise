@@ -19,15 +19,15 @@ const CardWrapper = styled(MainCard)(({ theme }) => ({
         background: theme.palette.card.hover,
         boxShadow: '0 2px 14px 0 rgb(32 40 45 / 20%)'
     },
-    maxHeight: '300px',
-    maxWidth: '300px',
+    maxHeight: '600px',
+    maxWidth: '400px',
     overflowWrap: 'break-word',
     whiteSpace: 'pre-line'
 }))
 
 // ===========================|| CONTRACT CARD ||=========================== //
 
-const MetricsItemCard = ({ isLoading, data, onClick }) => {
+const MetricsItemCard = ({ isLoading, data, onClick, component }) => {
     return (
         <>
             {isLoading ? (
@@ -82,7 +82,15 @@ const MetricsItemCard = ({ isLoading, data, onClick }) => {
                                 </Typography>
                             </div>
                             {data.value && (
-                                <span style={{ marginTop: 10, overflowWrap: 'break-word', whiteSpace: 'pre-line', alignItems: 'center' }}>
+                                <span
+                                    style={{
+                                        marginTop: 20,
+                                        marginBottom: 20,
+                                        overflowWrap: 'break-word',
+                                        whiteSpace: 'pre-line',
+                                        textAlign: 'center'
+                                    }}
+                                >
                                     <Typography
                                         sx={{
                                             fontSize: '1.5rem',
@@ -95,6 +103,7 @@ const MetricsItemCard = ({ isLoading, data, onClick }) => {
                                     </Typography>
                                 </span>
                             )}
+                            {component}
                         </Grid>
                     </Box>
                 </CardWrapper>
@@ -106,7 +115,8 @@ const MetricsItemCard = ({ isLoading, data, onClick }) => {
 MetricsItemCard.propTypes = {
     isLoading: PropTypes.bool,
     data: PropTypes.object,
-    onClick: PropTypes.func
+    onClick: PropTypes.func,
+    component: PropTypes.element
 }
 
 export default MetricsItemCard
