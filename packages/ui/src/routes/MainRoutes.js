@@ -27,6 +27,9 @@ const Variables = Loadable(lazy(() => import('views/variables')))
 
 // Eval/Metrics routing
 const EvalMetrics = Loadable(lazy(() => import('views/evals_metrics')))
+const EvalMetricsInferences = Loadable(lazy(() => import('views/evals_metrics/inferences')))
+const EvalMetricsLatency = Loadable(lazy(() => import('views/evals_metrics/latency')))
+
 const EvalBenchmarking = Loadable(lazy(() => import('views/evals_benchmarking')))
 const EvalRagas = Loadable(lazy(() => import('views/evals_ragas')))
 
@@ -71,6 +74,14 @@ const MainRoutes = {
         {
             path: '/metrics',
             element: <EvalMetrics />
+        },
+        {
+            path: '/metrics_inferences',
+            element: <EvalMetricsInferences />
+        },
+        {
+            path: '/metrics_latency',
+            element: <EvalMetricsLatency />
         },
         {
             path: '/benchmarking',

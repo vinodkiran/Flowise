@@ -19,8 +19,6 @@ const CardWrapper = styled(MainCard)(({ theme }) => ({
         background: theme.palette.card.hover,
         boxShadow: '0 2px 14px 0 rgb(32 40 45 / 20%)'
     },
-    maxHeight: '600px',
-    maxWidth: '400px',
     overflowWrap: 'break-word',
     whiteSpace: 'pre-line'
 }))
@@ -33,77 +31,32 @@ const MetricsItemCard = ({ isLoading, data, onClick, component }) => {
             {isLoading ? (
                 <SkeletonChatflowCard />
             ) : (
-                <CardWrapper border={false} content={false} onClick={onClick}>
+                <CardWrapper border={false} content={false} onClick={onClick} alignItems='center' sx={{ textAlign: 'center' }}>
                     <Box sx={{ p: 2.25 }}>
                         <Grid container direction='column'>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    alignItems: 'left'
-                                }}
-                            >
-                                {data.iconSrc && (
-                                    <div
-                                        style={{
-                                            width: 35,
-                                            height: 35,
-                                            marginRight: 10,
-                                            borderRadius: '50%',
-                                            background: `url(${data.iconSrc})`,
-                                            backgroundSize: 'contain',
-                                            backgroundRepeat: 'no-repeat',
-                                            backgroundPosition: 'center center'
-                                        }}
-                                    ></div>
-                                )}
-                                {!data.iconSrc && data.color && (
-                                    <div
-                                        style={{
-                                            width: 35,
-                                            height: 35,
-                                            marginRight: 10,
-                                            borderRadius: '50%',
-                                            background: data.color
-                                        }}
-                                    ></div>
-                                )}
+                            <Grid key='0'>
                                 <Typography
                                     sx={{
                                         fontSize: '0.8rem',
                                         fontWeight: 200,
-                                        color: 'text.secondary',
-                                        textTransform: 'capitalize',
-                                        overflowWrap: 'break-word',
-                                        whiteSpace: 'pre-line'
+                                        color: 'text.secondary'
                                     }}
                                 >
                                     {data.header}
                                 </Typography>
-                            </div>
-                            {data.value && (
-                                <span
-                                    style={{
-                                        marginTop: 20,
-                                        marginBottom: 20,
-                                        overflowWrap: 'break-word',
-                                        whiteSpace: 'pre-line',
-                                        textAlign: 'center'
+                                <Typography
+                                    sx={{
+                                        fontSize: '1.5rem',
+                                        fontWeight: 500,
+                                        marginLeft: '10'
                                     }}
                                 >
-                                    <Typography
-                                        sx={{
-                                            fontSize: '1.5rem',
-                                            fontWeight: 500,
-                                            overflowWrap: 'break-word',
-                                            whiteSpace: 'pre-line'
-                                        }}
-                                    >
-                                        {data.value}
-                                    </Typography>
-                                </span>
-                            )}
-                            {component}
+                                    {data.value}
+                                </Typography>
+                            </Grid>
+                            <Grid key='1' sx={{ flexGrow: 1 }}>
+                                {component}
+                            </Grid>
                         </Grid>
                     </Box>
                 </CardWrapper>
