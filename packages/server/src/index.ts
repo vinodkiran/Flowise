@@ -1385,6 +1385,79 @@ export class App {
         })
 
         // ----------------------------------------
+        // Metrics
+        // ----------------------------------------
+
+        this.app.get('/api/v1/inferences', async (req: Request, res: Response) => {
+            const chatflowId = req.query?.chatflowId as string | undefined
+            const sortOrder = req.query?.order as string | undefined
+            const chatId = req.query?.chatId as string | undefined
+            const memoryType = req.query?.memoryType as string | undefined
+            const sessionId = req.query?.sessionId as string | undefined
+            const messageId = req.query?.messageId as string | undefined
+            const startDate = req.query?.startDate as string | undefined
+            const endDate = req.query?.endDate as string | undefined
+            let chatTypeFilter = req.query?.chatType as chatType | undefined
+            let summaryOrDetail = req.query?.summaryOrDetail as string | 'summary'
+            console.log('startDate ' + startDate)
+            console.log('endDate ' + endDate)
+            console.log('chatflowId ' + chatflowId)
+            if (chatTypeFilter) {
+                try {
+                    const chatTypeFilterArray = JSON.parse(chatTypeFilter)
+                    if (chatTypeFilterArray.includes(chatType.EXTERNAL) && chatTypeFilterArray.includes(chatType.INTERNAL)) {
+                        chatTypeFilter = undefined
+                    } else if (chatTypeFilterArray.includes(chatType.EXTERNAL)) {
+                        chatTypeFilter = chatType.EXTERNAL
+                    } else if (chatTypeFilterArray.includes(chatType.INTERNAL)) {
+                        chatTypeFilter = chatType.INTERNAL
+                    }
+                } catch (e) {
+                    return res.status(500).send(e)
+                }
+            }
+            const chatmessages = await this.getMetricsCalls(
+                chatflowId,
+                chatTypeFilter,
+                sortOrder,
+                chatId,
+                memoryType,
+                sessionId,
+                startDate,
+                endDate,
+                messageId
+            )
+            const dateCountMap: Map<string, number> = new Map<string, number>()
+            chatmessages.map((message, index) => {
+                const date = message.createdDate
+                if (date) {
+                    let dateStr = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + (date.getDay() + 1)
+                    // @ts-ignore
+                    dateCountMap.set(dateStr, dateCountMap.has(dateStr) ? dateCountMap.get(dateStr) + 1 : 1)
+                }
+            })
+            const summaryData: any = []
+            dateCountMap.forEach((value, key, index) => {
+                summaryData.push({
+                    x: key,
+                    y: value
+                })
+            })
+            if (summaryOrDetail === 'summary') {
+                return res.json({
+                    totalCount: chatmessages.length,
+                    summary: summaryData
+                })
+            } else {
+                return res.json({
+                    totalCount: chatmessages.length,
+                    summary: summaryData,
+                    messages: chatmessages
+                })
+            }
+        })
+
+        // ----------------------------------------
         // Serve UI static
         // ----------------------------------------
 
@@ -1435,7 +1508,7 @@ export class App {
      * @param {string} endDate
      */
     async getChatMessage(
-        chatflowid: string,
+        chatflowid: string | undefined,
         chatType: chatType | undefined,
         sortOrder: string = 'ASC',
         chatId?: string,
@@ -1445,24 +1518,15 @@ export class App {
         endDate?: string,
         messageId?: string
     ): Promise<ChatMessage[]> {
-        const setDateToStartOrEndOfDay = (dateTimeStr: string, setHours: 'start' | 'end') => {
-            const date = new Date(dateTimeStr)
-            if (isNaN(date.getTime())) {
-                return undefined
-            }
-            setHours === 'start' ? date.setHours(0, 0, 0, 0) : date.setHours(23, 59, 59, 999)
-            return date
-        }
-
         let fromDate
-        if (startDate) fromDate = setDateToStartOrEndOfDay(startDate, 'start')
+        if (startDate) fromDate = this.setDateToStartOrEndOfDay(startDate, 'start')
 
         let toDate
-        if (endDate) toDate = setDateToStartOrEndOfDay(endDate, 'end')
+        if (endDate) toDate = this.setDateToStartOrEndOfDay(endDate, 'end')
 
         return await this.AppDataSource.getRepository(ChatMessage).find({
             where: {
-                chatflowid,
+                chatflowid: chatflowid ?? undefined,
                 chatType,
                 chatId,
                 memoryType: memoryType ?? undefined,
@@ -1473,6 +1537,58 @@ export class App {
             },
             order: {
                 createdDate: sortOrder === 'DESC' ? 'DESC' : 'ASC'
+            }
+        })
+    }
+
+    setDateToStartOrEndOfDay(dateTimeStr: string, setHours: 'start' | 'end') {
+        const date = new Date(dateTimeStr)
+        if (isNaN(date.getTime())) {
+            return undefined
+        }
+        setHours === 'start' ? date.setHours(0, 0, 0, 0) : date.setHours(23, 59, 59, 999)
+        return date
+    }
+
+    async getMetricsCalls(
+        chatflowid: string | undefined,
+        chatType: chatType | undefined,
+        sortOrder: string = 'ASC',
+        chatId?: string,
+        memoryType?: string,
+        sessionId?: string,
+        startDate?: string,
+        endDate?: string,
+        messageId?: string
+    ): Promise<ChatMessage[]> {
+        let fromDate
+        if (startDate) fromDate = this.setDateToStartOrEndOfDay(startDate, 'start')
+
+        let toDate
+        if (endDate) toDate = this.setDateToStartOrEndOfDay(endDate, 'end')
+
+        console.log('fromDate ' + fromDate)
+        console.log('toDate ' + toDate)
+
+        return await this.AppDataSource.getRepository(ChatMessage).find({
+            where: {
+                chatflowid: chatflowid ?? undefined,
+                chatType,
+                chatId,
+                memoryType: memoryType ?? undefined,
+                sessionId: sessionId ?? undefined,
+                ...(fromDate && { createdDate: MoreThanOrEqual(fromDate) }),
+                ...(toDate && { createdDate: LessThanOrEqual(toDate) }),
+                id: messageId ?? undefined
+            },
+            order: {
+                createdDate: sortOrder === 'DESC' ? 'DESC' : 'ASC'
+            },
+            select: {
+                chatflowid: true,
+                chatType: true,
+                memoryType: true,
+                createdDate: true
             }
         })
     }
@@ -1831,6 +1947,7 @@ export class App {
             const nodeModule = await import(nodeInstanceFilePath)
             const nodeInstance = new nodeModule.nodeClass({ sessionId })
 
+            console.log('****', incomingInput)
             let result = isStreamValid
                 ? await nodeInstance.run(nodeToExecuteData, incomingInput.question, {
                       chatId,

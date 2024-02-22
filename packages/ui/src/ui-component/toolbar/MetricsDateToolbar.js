@@ -2,9 +2,7 @@ import * as React from 'react'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import PropTypes from 'prop-types'
 import { ButtonGroup, ToggleButton } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@mui/material/styles'
-import { useSelector } from 'react-redux'
 
 const toolbarItems = [
     {
@@ -36,13 +34,16 @@ const toolbarItems = [
         value: 'custom'
     }
 ]
-export default function MetricsDateToolbar(initialState, toolbarType) {
+export default function MetricsDateToolbar({ onDateFilterChange }) {
     const theme = useTheme()
     const [view, setView] = React.useState(localStorage.getItem('metricsTimePeriod') || 'today')
 
     const handleChange = (event, nextView) => {
         localStorage.setItem('metricsTimePeriod', nextView)
         setView(nextView)
+        if (onDateFilterChange) {
+            onDateFilterChange()
+        }
     }
 
     return (
@@ -59,68 +60,11 @@ export default function MetricsDateToolbar(initialState, toolbarType) {
                         {item.label}
                     </ToggleButton>
                 ))}
-                {/*<ToggleButton*/}
-                {/*    sx={{ color: theme?.customization?.isDarkMode ? 'white' : 'inherit' }}*/}
-                {/*    variant='contained'*/}
-                {/*    value='card'*/}
-                {/*    title='Card View'*/}
-                {/*>*/}
-                {/*    Yesterday*/}
-                {/*</ToggleButton>*/}
-                {/*<ToggleButton*/}
-                {/*    sx={{ color: theme?.customization?.isDarkMode ? 'white' : 'inherit' }}*/}
-                {/*    variant='contained'*/}
-                {/*    value='card'*/}
-                {/*    title='Card View'*/}
-                {/*>*/}
-                {/*    Today*/}
-                {/*</ToggleButton>*/}
-                {/*<ToggleButton*/}
-                {/*    sx={{ color: theme?.customization?.isDarkMode ? 'white' : 'inherit' }}*/}
-                {/*    variant='contained'*/}
-                {/*    value='list'*/}
-                {/*    title='List View'*/}
-                {/*>*/}
-                {/*    7d*/}
-                {/*</ToggleButton>*/}
-                {/*<ToggleButton*/}
-                {/*    sx={{ color: theme?.customization?.isDarkMode ? 'white' : 'inherit' }}*/}
-                {/*    variant='contained'*/}
-                {/*    value='list'*/}
-                {/*    title='List View'*/}
-                {/*>*/}
-                {/*    15d*/}
-                {/*</ToggleButton>*/}
-                {/*<ToggleButton*/}
-                {/*    sx={{ color: theme?.customization?.isDarkMode ? 'white' : 'inherit' }}*/}
-                {/*    variant='contained'*/}
-                {/*    value='list'*/}
-                {/*    title='List View'*/}
-                {/*>*/}
-                {/*    30d*/}
-                {/*</ToggleButton>*/}
-                {/*<ToggleButton*/}
-                {/*    sx={{ color: theme?.customization?.isDarkMode ? 'white' : 'inherit' }}*/}
-                {/*    variant='contained'*/}
-                {/*    value='list'*/}
-                {/*    title='List View'*/}
-                {/*>*/}
-                {/*    60d*/}
-                {/*</ToggleButton>*/}
-                {/*<ToggleButton*/}
-                {/*    sx={{ color: theme?.customization?.isDarkMode ? 'white' : 'inherit' }}*/}
-                {/*    variant='contained'*/}
-                {/*    value='list'*/}
-                {/*    title='List View'*/}
-                {/*>*/}
-                {/*    Custom*/}
-                {/*</ToggleButton>*/}
             </ToggleButtonGroup>
         </ButtonGroup>
     )
 }
 
 MetricsDateToolbar.propTypes = {
-    initialState: PropTypes.string,
-    toolbarType: PropTypes.string
+    onDateFilterChange: PropTypes.func
 }

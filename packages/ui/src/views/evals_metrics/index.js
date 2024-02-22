@@ -14,6 +14,7 @@ import { MetricsLineChart } from '../../ui-component/charts/MetricsLineChart'
 import { MetricsBarChart } from '../../ui-component/charts/MetricsBarChart'
 import { useNavigate } from 'react-router-dom'
 import chatflowsApi from 'api/chatflows'
+import metricsApi from 'api/metrics'
 import useApi from '../../hooks/useApi'
 import { Dropdown } from '../../ui-component/dropdown/Dropdown'
 import MetricsDateToolbar from '../../ui-component/toolbar/MetricsDateToolbar'
@@ -32,15 +33,32 @@ const EvalMetrics = () => {
     const customization = useSelector((state) => state.customization)
 
     const getAllChatflowsApi = useApi(chatflowsApi.getAllChatflows)
+    const getInferencesApi = useApi(metricsApi.getInferences)
     const [selectedChatflow, setSelectedChatflow] = useState('all')
+    const [inferenceData, setInferenceData] = useState([])
+    const [totalInferenceCount, setTotalInferenceCount] = useState(0)
     const [flows, setFlows] = useState([])
 
     useEffect(() => {
         if (flows.length === 0) {
             getAllChatflowsApi.request()
+            getInferencesApi.request({
+                startDate: new Date(),
+                endDate: new Date(),
+                summaryOrDetail: 'summary'
+            })
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    useEffect(() => {
+        if (getInferencesApi.data) {
+            const originalData = getInferencesApi.data.summary
+            console.log('getInferencesApi.data.totalCount === ' + getInferencesApi.data.totalCount)
+            setInferenceData(originalData)
+            setTotalInferenceCount(getInferencesApi.data.totalCount)
+        }
+    }, [getInferencesApi.data])
 
     useEffect(() => {
         if (getAllChatflowsApi.data) {
@@ -77,6 +95,40 @@ const EvalMetrics = () => {
         }
     }
 
+    const dateFilterChange = () => {
+        let key = localStorage.getItem('metricsTimePeriod') || 'today'
+        let startDate = new Date()
+        let endDate = new Date()
+        let numDays = 0
+        switch (key) {
+            case 'today':
+                startDate.setDate(startDate.getDate() - 1)
+                endDate = startDate
+                break
+            case 'yesterday':
+                startDate.setDate(startDate.getDate() - 1)
+                endDate = startDate
+                break
+            case '7d':
+            case '15d':
+            case '30d':
+            case '60d':
+            case '90d':
+                numDays = parseInt(key.substring(0, key.length - 1))
+                startDate.setDate(startDate.getDate() - numDays)
+                break
+        }
+        startDate.setHours(0, 0, 0, 0)
+        endDate.setHours(23, 59, 59, 999)
+        getInferencesApi.request({
+            chatflowId: selectedChatflow === 'all' ? undefined : selectedChatflow,
+            startDate: startDate,
+            endDate: endDate,
+            chatType: undefined,
+            summaryOrDetail: 'summary'
+        })
+    }
+
     return (
         <>
             <MainCard sx={{ background: customization.isDarkMode ? theme.palette.common.black : '' }}>
@@ -98,7 +150,10 @@ const EvalMetrics = () => {
                             name='chatflow'
                             defaultOption='Select Chatflow'
                             options={flows}
-                            onSelect={(newValue) => setSelectedChatflow(newValue)}
+                            onSelect={(newValue) => {
+                                setSelectedChatflow(newValue)
+                                dateFilterChange()
+                            }}
                             value={selectedChatflow}
                         />
                         <Box sx={{ flexGrow: 1 }} />
@@ -109,7 +164,7 @@ const EvalMetrics = () => {
                             variant='contained'
                             aria-label='outlined primary button group'
                         >
-                            <MetricsDateToolbar initialState={''} toolbarType={'Dashboard'} />
+                            <MetricsDateToolbar onDateFilterChange={dateFilterChange} />
                             <Box sx={{ width: 5 }} />
                             <ButtonGroup disableElevation aria-label='outlined primary button group'>
                                 <StyledButton style={{ marginLeft: '18px' }} variant='contained'>
@@ -139,11 +194,12 @@ const EvalMetrics = () => {
                         <Grid key='0' item lg={6} md={6} sm={12} xs={12}>
                             <Stack flexDirection='column' rowGap={2}>
                                 <MetricsItemCard
-                                    data={{ header: 'TOTAL INFERENCES', value: '59' }}
+                                    data={{ header: 'TOTAL INFERENCES', value: totalInferenceCount }}
                                     component={
                                         <MetricsBarChart
                                             chartType={'TOTAL_INFERENCES'}
                                             sx={{ pt: 2 }}
+                                            data={inferenceData}
                                             onClick={() => gotoDetails('TOTAL_INFERENCES')}
                                         />
                                     }

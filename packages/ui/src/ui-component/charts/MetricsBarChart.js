@@ -1,7 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import PropTypes from 'prop-types'
 
-const data = [
+const data2 = [
     {
         x: '2024-01-20',
         y: 12,
@@ -316,14 +316,14 @@ const barData = [
         count: 0
     }
 ]
-export const MetricsBarChart = ({ isLoading, chartType, onClick }) => {
+export const MetricsBarChart = ({ isLoading, data, chartType, onClick }) => {
     return (
         <ResponsiveContainer width='95%' height={300}>
             <BarChart
                 onClick={onClick}
                 width={300}
                 height={250}
-                data={chartType === 'TOTAL_INFERENCES' ? barData : data}
+                data={chartType === 'TOTAL_INFERENCES' ? data : data2}
                 margin={{
                     top: 5,
                     right: 30,
@@ -335,7 +335,7 @@ export const MetricsBarChart = ({ isLoading, chartType, onClick }) => {
                 <XAxis dataKey='x' />
                 <YAxis dataKey='y' />
                 <Tooltip />
-                <Bar dataKey='count' fill={chartType === 'TOTAL_INFERENCES' ? '#82ca9d' : '#e8629c'} />
+                <Bar dataKey='y' fill={chartType === 'TOTAL_INFERENCES' ? '#82ca9d' : '#e8629c'} />
             </BarChart>
         </ResponsiveContainer>
     )
@@ -343,6 +343,7 @@ export const MetricsBarChart = ({ isLoading, chartType, onClick }) => {
 
 MetricsBarChart.propTypes = {
     isLoading: PropTypes.bool,
+    data: PropTypes.object,
     chartType: PropTypes.string,
     onClick: PropTypes.func
 }

@@ -55,7 +55,7 @@ const EvalMetrics = () => {
                         <h1>Metrics - Latency</h1>
                         <Box sx={{ flexGrow: 1 }} />
                         <ButtonGroup sx={{ maxHeight: 40 }} disableElevation variant='contained' aria-label='outlined primary button group'>
-                            <MetricsDateToolbar initialState={''} toolbarType={'Dashboard'} />
+                            <MetricsDateToolbar />
                             <Box sx={{ width: 5 }} />
                             <ButtonGroup disableElevation aria-label='outlined primary button group'>
                                 <StyledButton variant='contained'>Refresh</StyledButton>
