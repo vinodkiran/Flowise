@@ -34,6 +34,8 @@ import gLoginLogo from 'assets/images/google-login-white.png'
 import './InputParameters.css'
 
 import { TooltipWithParser } from '../../ui-component/tooltip/TooltipWithParser'
+import AddEditCredentialDialog from '../credentials/AddEditCredentialDialog'
+import credentialsApi from '../../api/credentials'
 
 const StyledPopper = styled(Popper)({
     boxShadow: '0px 8px 10px -5px rgb(0 0 0 / 20%), 0px 16px 24px 2px rgb(0 0 0 / 14%), 0px 6px 30px 5px rgb(0 0 0 / 12%)',
@@ -47,7 +49,7 @@ const StyledPopper = styled(Popper)({
     }
 })
 
-const ADD_NEW_CREDENTIAL = '+ Add New Credential'
+const ADD_NEW_CREDENTIAL = '- Create New -'
 
 // ==============================|| CREDENTIAL INPUT ||============================== //
 
@@ -73,7 +75,11 @@ const CredentialInput = ({
     const [oAuth2RedirectURL, setOAuth2RedirectURL] = useState('')
 
     const getCredentialParamsApi = useApi(credentialApi.getCredentialParams)
-    const getRegisteredCredentialsApi = useApi(credentialApi.getCredentials)
+    const getRegisteredCredentialsByNameApi = useApi(credentialApi.getCredentialsByName)
+    const [showSpecificCredentialDialog, setShowSpecificCredentialDialog] = useState(false)
+    const [specificCredentialDialogProps, setSpecificCredentialDialogProps] = useState({})
+    const [credentialId, setCredentialId] = useState('')
+    const [reloadTimestamp, setReloadTimestamp] = useState(Date.now().toString())
 
     const onChanged = (values) => {
         const updateValues = values
@@ -130,12 +136,12 @@ const CredentialInput = ({
         valueChanged(updateValues, paramsType)
     }
 
-    const onDeleteCredential = async (credentialId) => {
-        const response = await credentialApi.deleteCredential(credentialId)
-        if (response.data) {
-            clearCredentialParams()
-            clearCredentialParamsValues('')
-        }
+    const onConfirmAsyncOption = (selectedCredentialId = '') => {
+        setCredentialId(selectedCredentialId)
+        setReloadTimestamp(Date.now().toString())
+        setSpecificCredentialDialogProps({})
+        setShowSpecificCredentialDialog(false)
+        //onSelect(selectedCredentialId)
     }
 
     const openOAuth2PopUpWindow = (oAuth2PopupURL) => {
@@ -153,15 +159,15 @@ const CredentialInput = ({
 
     const getDefaultOptionValue = () => ''
 
-    // getRegisteredCredentialsApi successful
+    // getRegisteredCredentialsByNameApi successful
     useEffect(() => {
-        if (getRegisteredCredentialsApi.data) {
+        if (getRegisteredCredentialsByNameApi.data) {
             const credentialOptions = []
-            if (getRegisteredCredentialsApi.data.length) {
-                for (let i = 0; i < getRegisteredCredentialsApi.data.length; i += 1) {
+            if (getRegisteredCredentialsByNameApi.data.length) {
+                for (let i = 0; i < getRegisteredCredentialsByNameApi.data.length; i += 1) {
                     credentialOptions.push({
-                        id: getRegisteredCredentialsApi.data[i].id,
-                        name: getRegisteredCredentialsApi.data[i].name
+                        id: getRegisteredCredentialsByNameApi.data[i].id,
+                        name: getRegisteredCredentialsByNameApi.data[i].name
                     })
                 }
             }
@@ -173,7 +179,7 @@ const CredentialInput = ({
                 updateYupValidation('registeredCredential', 'name')
             }
         }
-    }, [getRegisteredCredentialsApi.data])
+    }, [getRegisteredCredentialsByNameApi.data])
 
     // getCredentialParamsApi successful
     useEffect(() => {
@@ -207,7 +213,7 @@ const CredentialInput = ({
     useEffect(() => {
         setCredentialValues(initialValues)
         if (initialValues && initialValues.credentialMethod) {
-            getRegisteredCredentialsApi.request(initialValues.credentialMethod)
+            getRegisteredCredentialsByNameApi.request(initialValues.credentialMethod)
             setNodeCredentialName(initialValues.credentialMethod)
         }
     }, [initialValues])
@@ -235,60 +241,60 @@ const CredentialInput = ({
                                     setStatus({ success: true })
                                     setSubmitting(false)
                                 } else {
-                                    const body = getCredentialRequestBody(values)
-                                    let response
-                                    if (isAddNewCredential) {
-                                        response = await credentialApi.createNewCredential(body)
-                                    } else {
-                                        response = await credentialApi.updateCredential(values.registeredCredential.id, body)
-                                    }
-                                    if (response.data) {
-                                        // Open oAuth2 window
-                                        if (values.credentialMethod.toLowerCase().includes('oauth2')) {
-                                            const oAuth2PopupURL = await oauth2Api.geOAuth2PopupURL(response.data.id)
-                                            const popUpWindow = openOAuth2PopUpWindow(oAuth2PopupURL.data)
-
-                                            const oAuth2Completed = async (event) => {
-                                                if (event.data === 'success') {
-                                                    window.removeEventListener('message', oAuth2Completed, false)
-
-                                                    const submitValues = {
-                                                        credentialMethod: values.credentialMethod,
-                                                        registeredCredential: {
-                                                            id: response.data.id,
-                                                            name: response.data.name
-                                                        },
-                                                        submit: true
-                                                    }
-                                                    clearCredentialParams()
-                                                    onSubmit(submitValues, paramsType)
-                                                    setStatus({ success: true })
-                                                    setSubmitting(false)
-
-                                                    if (popUpWindow) {
-                                                        popUpWindow.close()
-                                                    }
-                                                }
-                                            }
-                                            window.addEventListener('message', oAuth2Completed, false)
-                                            return
-                                        }
-
-                                        const submitValues = {
-                                            credentialMethod: values.credentialMethod,
-                                            registeredCredential: {
-                                                id: response.data.id,
-                                                name: response.data.name
-                                            },
-                                            submit: true
-                                        }
-                                        clearCredentialParams()
-                                        onSubmit(submitValues, paramsType)
-                                        setStatus({ success: true })
-                                        setSubmitting(false)
-                                    } else {
-                                        throw new Error(response)
-                                    }
+                                    // const body = getCredentialRequestBody(values)
+                                    // let response
+                                    // if (isAddNewCredential) {
+                                    //     response = await credentialApi.createNewCredential(body)
+                                    // } else {
+                                    //     response = await credentialApi.updateCredential(values.registeredCredential.id, body)
+                                    // }
+                                    // if (response.data) {
+                                    //     // Open oAuth2 window
+                                    //     if (values.credentialMethod.toLowerCase().includes('oauth2')) {
+                                    //         const oAuth2PopupURL = await oauth2Api.geOAuth2PopupURL(response.data.id)
+                                    //         const popUpWindow = openOAuth2PopUpWindow(oAuth2PopupURL.data)
+                                    //
+                                    //         const oAuth2Completed = async (event) => {
+                                    //             if (event.data === 'success') {
+                                    //                 window.removeEventListener('message', oAuth2Completed, false)
+                                    //
+                                    //                 const submitValues = {
+                                    //                     credentialMethod: values.credentialMethod,
+                                    //                     registeredCredential: {
+                                    //                         id: response.data.id,
+                                    //                         name: response.data.name
+                                    //                     },
+                                    //                     submit: true
+                                    //                 }
+                                    //                 clearCredentialParams()
+                                    //                 onSubmit(submitValues, paramsType)
+                                    //                 setStatus({ success: true })
+                                    //                 setSubmitting(false)
+                                    //
+                                    //                 if (popUpWindow) {
+                                    //                     popUpWindow.close()
+                                    //                 }
+                                    //             }
+                                    //         }
+                                    //         window.addEventListener('message', oAuth2Completed, false)
+                                    //         return
+                                    //     }
+                                    //
+                                    //     const submitValues = {
+                                    //         credentialMethod: values.credentialMethod,
+                                    //         registeredCredential: {
+                                    //             id: response.data.id,
+                                    //             name: response.data.name
+                                    //         },
+                                    //         submit: true
+                                    //     }
+                                    //     clearCredentialParams()
+                                    //     onSubmit(submitValues, paramsType)
+                                    //     setStatus({ success: true })
+                                    //     setSubmitting(false)
+                                    // } else {
+                                    //     throw new Error(response)
+                                    // }
                                 }
                             }
                         } catch (err) {
@@ -328,7 +334,7 @@ const CredentialInput = ({
                                                     onChanged(overwriteValues)
                                                     clearCredentialParams()
                                                     if (selection) {
-                                                        getRegisteredCredentialsApi.request(value)
+                                                        getRegisteredCredentialsByNameApi.request(value)
                                                         setNodeCredentialName(value)
                                                     } else {
                                                         setCredentialOptions([])
@@ -397,7 +403,37 @@ const CredentialInput = ({
                                                         valueChanged(updateValues, paramsType)
                                                     }
                                                 } else {
+                                                    let names = ''
+                                                    // if (inputParam.credentialNames.length > 1) {
+                                                    //     names = inputParam.credentialNames.join('&')
+                                                    // } else {
+                                                    names = overwriteValues.credentialMethod
+                                                    // }
                                                     clearCredentialParamsValues(selectedCredential)
+                                                    const componentCredentialsResp = await credentialsApi.getSpecificComponentCredential(
+                                                        names
+                                                    )
+                                                    if (componentCredentialsResp.data) {
+                                                        if (Array.isArray(componentCredentialsResp.data)) {
+                                                            // const dialogProp = {
+                                                            //     title: 'Add New Credential',
+                                                            //     componentsCredentials: componentCredentialsResp.data
+                                                            // }
+                                                            // setCredentialListDialogProps(dialogProp)
+                                                            // setShowCredentialListDialog(true)
+                                                        } else {
+                                                            const dialogProp = {
+                                                                type: 'ADD',
+                                                                cancelButtonName: 'Cancel',
+                                                                confirmButtonName: 'Add',
+                                                                credentialComponent: componentCredentialsResp.data
+                                                            }
+                                                            setSpecificCredentialDialogProps(dialogProp)
+                                                            setShowSpecificCredentialDialog(true)
+                                                        }
+                                                    }
+                                                    // setSpecificCredentialDialogProps(dialogProp)
+                                                    // setShowSpecificCredentialDialog(true)
                                                 }
                                                 getCredentialParamsApi.request(nodeCredentialName)
                                                 if (values.credentialMethod.toLowerCase().includes('oauth2')) {
@@ -439,18 +475,6 @@ const CredentialInput = ({
                                 </FormControl>
                             )}
 
-                            {values && values.registeredCredential && values.registeredCredential.id && (
-                                <Button
-                                    sx={{ mb: 2 }}
-                                    size='small'
-                                    variant='outlined'
-                                    startIcon={<IconTrash size={15} />}
-                                    onClick={() => onDeleteCredential(values.registeredCredential.id)}
-                                >
-                                    Delete Credential
-                                </Button>
-                            )}
-
                             {oAuth2RedirectURL && (
                                 <div>
                                     <Typography variant='overline'>OAuth2 Redirect URL</Typography>
@@ -478,195 +502,195 @@ const CredentialInput = ({
                                 </div>
                             )}
 
-                            {values.credentialMethod &&
-                                credentialParams.map((input) => {
-                                    if (input.type === 'json') {
-                                        const inputName = input.name
+                            {/*{values.credentialMethod &&*/}
+                            {/*    credentialParams.map((input) => {*/}
+                            {/*        if (input.type === 'json') {*/}
+                            {/*            const inputName = input.name*/}
 
-                                        return (
-                                            <FormControl key={inputName} fullWidth sx={{ mb: 1, mt: 1 }} error={Boolean(errors[inputName])}>
-                                                <Stack direction='row'>
-                                                    <Typography variant='overline'>{input.label}</Typography>
-                                                    {input.description && <TooltipWithParser title={input.description} />}
-                                                </Stack>
-                                                <PerfectScrollbar
-                                                    style={{
-                                                        border: '1px solid',
-                                                        borderColor: theme.palette.grey['500'],
-                                                        borderRadius: '12px',
-                                                        height: '200px',
-                                                        maxHeight: '200px',
-                                                        overflowX: 'hidden',
-                                                        backgroundColor: 'white'
-                                                    }}
-                                                    onScroll={(e) => e.stopPropagation()}
-                                                >
-                                                    {customization.isDarkMode ? (
-                                                        <DarkCodeEditor
-                                                            value={values[inputName] || ''}
-                                                            onValueChange={(code) => {
-                                                                setFieldValue(inputName, code)
-                                                            }}
-                                                            placeholder={input.placeholder}
-                                                            type={input.type}
-                                                            onBlur={(e) => {
-                                                                const overwriteValues = {
-                                                                    ...values,
-                                                                    [inputName]: e.target.value
-                                                                }
-                                                                onChanged(overwriteValues)
-                                                            }}
-                                                            style={{
-                                                                fontSize: '0.875rem',
-                                                                minHeight: '200px',
-                                                                width: '100%'
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <LightCodeEditor
-                                                            value={values[inputName] || ''}
-                                                            onValueChange={(code) => {
-                                                                setFieldValue(inputName, code)
-                                                            }}
-                                                            placeholder={input.placeholder}
-                                                            type='json'
-                                                            onBlur={(e) => {
-                                                                const overwriteValues = {
-                                                                    ...values,
-                                                                    [inputName]: e.target.value
-                                                                }
-                                                                onChanged(overwriteValues)
-                                                            }}
-                                                            style={{
-                                                                fontSize: '0.875rem',
-                                                                minHeight: '200px',
-                                                                width: '100%'
-                                                            }}
-                                                        />
-                                                    )}
-                                                </PerfectScrollbar>
-                                                {errors[inputName] && (
-                                                    <span style={{ color: 'red', fontSize: '0.7rem', fontStyle: 'italic' }}>
-                                                        *{errors[inputName]}
-                                                    </span>
-                                                )}
-                                            </FormControl>
-                                        )
-                                    }
+                            {/*            return (*/}
+                            {/*                <FormControl key={inputName} fullWidth sx={{ mb: 1, mt: 1 }} error={Boolean(errors[inputName])}>*/}
+                            {/*                    <Stack direction='row'>*/}
+                            {/*                        <Typography variant='overline'>{input.label}</Typography>*/}
+                            {/*                        {input.description && <TooltipWithParser title={input.description} />}*/}
+                            {/*                    </Stack>*/}
+                            {/*                    <PerfectScrollbar*/}
+                            {/*                        style={{*/}
+                            {/*                            border: '1px solid',*/}
+                            {/*                            borderColor: theme.palette.grey['500'],*/}
+                            {/*                            borderRadius: '12px',*/}
+                            {/*                            height: '200px',*/}
+                            {/*                            maxHeight: '200px',*/}
+                            {/*                            overflowX: 'hidden',*/}
+                            {/*                            backgroundColor: 'white'*/}
+                            {/*                        }}*/}
+                            {/*                        onScroll={(e) => e.stopPropagation()}*/}
+                            {/*                    >*/}
+                            {/*                        {customization.isDarkMode ? (*/}
+                            {/*                            <DarkCodeEditor*/}
+                            {/*                                value={values[inputName] || ''}*/}
+                            {/*                                onValueChange={(code) => {*/}
+                            {/*                                    setFieldValue(inputName, code)*/}
+                            {/*                                }}*/}
+                            {/*                                placeholder={input.placeholder}*/}
+                            {/*                                type={input.type}*/}
+                            {/*                                onBlur={(e) => {*/}
+                            {/*                                    const overwriteValues = {*/}
+                            {/*                                        ...values,*/}
+                            {/*                                        [inputName]: e.target.value*/}
+                            {/*                                    }*/}
+                            {/*                                    onChanged(overwriteValues)*/}
+                            {/*                                }}*/}
+                            {/*                                style={{*/}
+                            {/*                                    fontSize: '0.875rem',*/}
+                            {/*                                    minHeight: '200px',*/}
+                            {/*                                    width: '100%'*/}
+                            {/*                                }}*/}
+                            {/*                            />*/}
+                            {/*                        ) : (*/}
+                            {/*                            <LightCodeEditor*/}
+                            {/*                                value={values[inputName] || ''}*/}
+                            {/*                                onValueChange={(code) => {*/}
+                            {/*                                    setFieldValue(inputName, code)*/}
+                            {/*                                }}*/}
+                            {/*                                placeholder={input.placeholder}*/}
+                            {/*                                type='json'*/}
+                            {/*                                onBlur={(e) => {*/}
+                            {/*                                    const overwriteValues = {*/}
+                            {/*                                        ...values,*/}
+                            {/*                                        [inputName]: e.target.value*/}
+                            {/*                                    }*/}
+                            {/*                                    onChanged(overwriteValues)*/}
+                            {/*                                }}*/}
+                            {/*                                style={{*/}
+                            {/*                                    fontSize: '0.875rem',*/}
+                            {/*                                    minHeight: '200px',*/}
+                            {/*                                    width: '100%'*/}
+                            {/*                                }}*/}
+                            {/*                            />*/}
+                            {/*                        )}*/}
+                            {/*                    </PerfectScrollbar>*/}
+                            {/*                    {errors[inputName] && (*/}
+                            {/*                        <span style={{ color: 'red', fontSize: '0.7rem', fontStyle: 'italic' }}>*/}
+                            {/*                            *{errors[inputName]}*/}
+                            {/*                        </span>*/}
+                            {/*                    )}*/}
+                            {/*                </FormControl>*/}
+                            {/*            )*/}
+                            {/*        }*/}
 
-                                    if (input.type === 'string' || input.type === 'password' || input.type === 'number') {
-                                        const inputName = input.name
+                            {/*        if (input.type === 'string' || input.type === 'password' || input.type === 'number') {*/}
+                            {/*            const inputName = input.name*/}
 
-                                        return (
-                                            <FormControl key={inputName} fullWidth sx={{ mb: 1, mt: 1 }} error={Boolean(errors[inputName])}>
-                                                <Stack direction='row'>
-                                                    <Typography variant='overline'>{input.label}</Typography>
-                                                    {input.description && <TooltipWithParser title={input.description} />}
-                                                </Stack>
-                                                <OutlinedInput
-                                                    id={inputName}
-                                                    type={input.type === 'string' || input.type === 'number' ? 'text' : input.type}
-                                                    value={values[inputName] || ''}
-                                                    placeholder={input.placeholder}
-                                                    name={inputName}
-                                                    onBlur={(e) => {
-                                                        handleBlur(e)
-                                                        onChanged(values)
-                                                    }}
-                                                    onChange={handleChange}
-                                                />
-                                                {errors[inputName] && (
-                                                    <span style={{ color: 'red', fontSize: '0.7rem', fontStyle: 'italic' }}>
-                                                        *{errors[inputName]}
-                                                    </span>
-                                                )}
-                                            </FormControl>
-                                        )
-                                    }
+                            {/*            return (*/}
+                            {/*                <FormControl key={inputName} fullWidth sx={{ mb: 1, mt: 1 }} error={Boolean(errors[inputName])}>*/}
+                            {/*                    <Stack direction='row'>*/}
+                            {/*                        <Typography variant='overline'>{input.label}</Typography>*/}
+                            {/*                        {input.description && <TooltipWithParser title={input.description} />}*/}
+                            {/*                    </Stack>*/}
+                            {/*                    <OutlinedInput*/}
+                            {/*                        id={inputName}*/}
+                            {/*                        type={input.type === 'string' || input.type === 'number' ? 'text' : input.type}*/}
+                            {/*                        value={values[inputName] || ''}*/}
+                            {/*                        placeholder={input.placeholder}*/}
+                            {/*                        name={inputName}*/}
+                            {/*                        onBlur={(e) => {*/}
+                            {/*                            handleBlur(e)*/}
+                            {/*                            onChanged(values)*/}
+                            {/*                        }}*/}
+                            {/*                        onChange={handleChange}*/}
+                            {/*                    />*/}
+                            {/*                    {errors[inputName] && (*/}
+                            {/*                        <span style={{ color: 'red', fontSize: '0.7rem', fontStyle: 'italic' }}>*/}
+                            {/*                            *{errors[inputName]}*/}
+                            {/*                        </span>*/}
+                            {/*                    )}*/}
+                            {/*                </FormControl>*/}
+                            {/*            )*/}
+                            {/*        }*/}
 
-                                    if (input.type === 'boolean') {
-                                        const inputName = input.name
+                            {/*        if (input.type === 'boolean') {*/}
+                            {/*            const inputName = input.name*/}
 
-                                        return (
-                                            <FormControl key={inputName} fullWidth sx={{ mb: 1, mt: 1 }} error={Boolean(errors[inputName])}>
-                                                <Stack direction='row'>
-                                                    <Typography variant='overline'>{input.label}</Typography>
-                                                    {input.description && <TooltipWithParser title={input.description} />}
-                                                </Stack>
-                                                <Switch
-                                                    checked={!!values[inputName]}
-                                                    onChange={(event) => {
-                                                        setFieldValue(inputName, event.target.checked)
-                                                        const overwriteValues = {
-                                                            ...values,
-                                                            [inputName]: event.target.checked
-                                                        }
-                                                        onChanged(overwriteValues)
-                                                    }}
-                                                    inputProps={{ 'aria-label': 'controlled' }}
-                                                />
-                                            </FormControl>
-                                        )
-                                    }
+                            {/*            return (*/}
+                            {/*                <FormControl key={inputName} fullWidth sx={{ mb: 1, mt: 1 }} error={Boolean(errors[inputName])}>*/}
+                            {/*                    <Stack direction='row'>*/}
+                            {/*                        <Typography variant='overline'>{input.label}</Typography>*/}
+                            {/*                        {input.description && <TooltipWithParser title={input.description} />}*/}
+                            {/*                    </Stack>*/}
+                            {/*                    <Switch*/}
+                            {/*                        checked={!!values[inputName]}*/}
+                            {/*                        onChange={(event) => {*/}
+                            {/*                            setFieldValue(inputName, event.target.checked)*/}
+                            {/*                            const overwriteValues = {*/}
+                            {/*                                ...values,*/}
+                            {/*                                [inputName]: event.target.checked*/}
+                            {/*                            }*/}
+                            {/*                            onChanged(overwriteValues)*/}
+                            {/*                        }}*/}
+                            {/*                        inputProps={{ 'aria-label': 'controlled' }}*/}
+                            {/*                    />*/}
+                            {/*                </FormControl>*/}
+                            {/*            )*/}
+                            {/*        }*/}
 
-                                    if (input.type === 'options') {
-                                        const inputName = input.name
-                                        const availableOptions = input.options || []
+                            {/*        if (input.type === 'options') {*/}
+                            {/*            const inputName = input.name*/}
+                            {/*            const availableOptions = input.options || []*/}
 
-                                        return (
-                                            <FormControl key={inputName} fullWidth sx={{ mb: 1, mt: 1 }}>
-                                                <Stack direction='row'>
-                                                    <Typography variant='overline'>{input.label}</Typography>
-                                                    {input.description && <TooltipWithParser title={input.description} />}
-                                                </Stack>
-                                                <Autocomplete
-                                                    id={inputName}
-                                                    freeSolo
-                                                    options={availableOptions}
-                                                    value={
-                                                        findMatchingOptions(availableOptions, values[inputName]) || getDefaultOptionValue()
-                                                    }
-                                                    onChange={(e, selection) => {
-                                                        const value = selection ? selection.name : ''
-                                                        setFieldValue(inputName, value)
-                                                        const overwriteValues = {
-                                                            ...values,
-                                                            [inputName]: value
-                                                        }
-                                                        onChanged(overwriteValues)
-                                                    }}
-                                                    onBlur={handleBlur}
-                                                    PopperComponent={StyledPopper}
-                                                    renderInput={(params) => (
-                                                        <TextField
-                                                            {...params}
-                                                            value={values[inputName]}
-                                                            error={Boolean(errors[inputName])}
-                                                        />
-                                                    )}
-                                                    renderOption={(props, option) => (
-                                                        <Box component='li' {...props}>
-                                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                                <Typography sx={{ p: 1 }} variant='h5'>
-                                                                    {option.label}
-                                                                </Typography>
-                                                                {option.description && (
-                                                                    <Typography sx={{ p: 1 }}>{option.description}</Typography>
-                                                                )}
-                                                            </div>
-                                                        </Box>
-                                                    )}
-                                                />
-                                                {errors[inputName] && (
-                                                    <span style={{ color: 'red', fontSize: '0.7rem', fontStyle: 'italic' }}>
-                                                        *{errors[inputName]}
-                                                    </span>
-                                                )}
-                                            </FormControl>
-                                        )
-                                    }
-                                    return null
-                                })}
+                            {/*            return (*/}
+                            {/*                <FormControl key={inputName} fullWidth sx={{ mb: 1, mt: 1 }}>*/}
+                            {/*                    <Stack direction='row'>*/}
+                            {/*                        <Typography variant='overline'>{input.label}</Typography>*/}
+                            {/*                        {input.description && <TooltipWithParser title={input.description} />}*/}
+                            {/*                    </Stack>*/}
+                            {/*                    <Autocomplete*/}
+                            {/*                        id={inputName}*/}
+                            {/*                        freeSolo*/}
+                            {/*                        options={availableOptions}*/}
+                            {/*                        value={*/}
+                            {/*                            findMatchingOptions(availableOptions, values[inputName]) || getDefaultOptionValue()*/}
+                            {/*                        }*/}
+                            {/*                        onChange={(e, selection) => {*/}
+                            {/*                            const value = selection ? selection.name : ''*/}
+                            {/*                            setFieldValue(inputName, value)*/}
+                            {/*                            const overwriteValues = {*/}
+                            {/*                                ...values,*/}
+                            {/*                                [inputName]: value*/}
+                            {/*                            }*/}
+                            {/*                            onChanged(overwriteValues)*/}
+                            {/*                        }}*/}
+                            {/*                        onBlur={handleBlur}*/}
+                            {/*                        PopperComponent={StyledPopper}*/}
+                            {/*                        renderInput={(params) => (*/}
+                            {/*                            <TextField*/}
+                            {/*                                {...params}*/}
+                            {/*                                value={values[inputName]}*/}
+                            {/*                                error={Boolean(errors[inputName])}*/}
+                            {/*                            />*/}
+                            {/*                        )}*/}
+                            {/*                        renderOption={(props, option) => (*/}
+                            {/*                            <Box component='li' {...props}>*/}
+                            {/*                                <div style={{ display: 'flex', flexDirection: 'column' }}>*/}
+                            {/*                                    <Typography sx={{ p: 1 }} variant='h5'>*/}
+                            {/*                                        {option.label}*/}
+                            {/*                                    </Typography>*/}
+                            {/*                                    {option.description && (*/}
+                            {/*                                        <Typography sx={{ p: 1 }}>{option.description}</Typography>*/}
+                            {/*                                    )}*/}
+                            {/*                                </div>*/}
+                            {/*                            </Box>*/}
+                            {/*                        )}*/}
+                            {/*                    />*/}
+                            {/*                    {errors[inputName] && (*/}
+                            {/*                        <span style={{ color: 'red', fontSize: '0.7rem', fontStyle: 'italic' }}>*/}
+                            {/*                            *{errors[inputName]}*/}
+                            {/*                        </span>*/}
+                            {/*                    )}*/}
+                            {/*                </FormControl>*/}
+                            {/*            )*/}
+                            {/*        }*/}
+                            {/*        return null*/}
+                            {/*    })}*/}
 
                             <Box sx={{ mt: 2 }}>
                                 {!(values.credentialMethod || '').toLowerCase().includes('google') && (
@@ -688,37 +712,45 @@ const CredentialInput = ({
                                         </StyledButton>
                                     </AnimateButton>
                                 )}
-                                {(values.credentialMethod || '').toLowerCase().includes('google') && (
-                                    <StyledButton
-                                        disabled={isSubmitting || Object.keys(errors).length > 0}
-                                        fullWidth
-                                        size='large'
-                                        type='submit'
-                                        variant='contained'
-                                        color='secondary'
-                                        sx={{ p: 0, margin: 0 }}
-                                    >
-                                        <div
-                                            style={{
-                                                alignItems: 'center',
-                                                display: 'flex',
-                                                width: '100%',
-                                                height: 50,
-                                                background: 'white'
-                                            }}
-                                        >
-                                            <img
-                                                style={{ objectFit: 'contain', height: '100%', width: '100%', padding: 7 }}
-                                                src={gLoginLogo}
-                                                alt='Google Login'
-                                            />
-                                        </div>
-                                    </StyledButton>
-                                )}
+                                {/*{(values.credentialMethod || '').toLowerCase().includes('google') && (*/}
+                                {/*    <StyledButton*/}
+                                {/*        disabled={isSubmitting || Object.keys(errors).length > 0}*/}
+                                {/*        fullWidth*/}
+                                {/*        size='large'*/}
+                                {/*        type='submit'*/}
+                                {/*        variant='contained'*/}
+                                {/*        color='secondary'*/}
+                                {/*        sx={{ p: 0, margin: 0 }}*/}
+                                {/*    >*/}
+                                {/*        <div*/}
+                                {/*            style={{*/}
+                                {/*                alignItems: 'center',*/}
+                                {/*                display: 'flex',*/}
+                                {/*                width: '100%',*/}
+                                {/*                height: 50,*/}
+                                {/*                background: 'white'*/}
+                                {/*            }}*/}
+                                {/*        >*/}
+                                {/*            <img*/}
+                                {/*                style={{ objectFit: 'contain', height: '100%', width: '100%', padding: 7 }}*/}
+                                {/*                src={gLoginLogo}*/}
+                                {/*                alt='Google Login'*/}
+                                {/*            />*/}
+                                {/*        </div>*/}
+                                {/*    </StyledButton>*/}
+                                {/*)}*/}
                             </Box>
                         </form>
                     )}
                 </Formik>
+                {showSpecificCredentialDialog && (
+                    <AddEditCredentialDialog
+                        show={showSpecificCredentialDialog}
+                        dialogProps={specificCredentialDialogProps}
+                        onCancel={() => setShowSpecificCredentialDialog(false)}
+                        onConfirm={onConfirmAsyncOption}
+                    ></AddEditCredentialDialog>
+                )}
             </Box>
         </>
     )

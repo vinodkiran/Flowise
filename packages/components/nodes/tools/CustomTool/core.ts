@@ -95,6 +95,7 @@ export class DynamicStructuredTool<
         return result
     }
 
+    // @ts-ignore
     protected async _call(arg: z.output<T>, _?: CallbackManagerForToolRun, overrideSessionId?: string): Promise<string> {
         let sandbox: any = {}
         if (typeof arg === 'object' && Object.keys(arg).length) {
