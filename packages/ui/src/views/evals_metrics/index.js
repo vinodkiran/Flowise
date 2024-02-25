@@ -18,6 +18,7 @@ import metricsApi from 'api/metrics'
 import useApi from '../../hooks/useApi'
 import { Dropdown } from '../../ui-component/dropdown/Dropdown'
 import MetricsDateToolbar from '../../ui-component/toolbar/MetricsDateToolbar'
+import { MetricsPercentAreaChart } from '../../ui-component/charts/MetricsPercentAreaChart'
 
 // API
 
@@ -42,11 +43,7 @@ const EvalMetrics = () => {
     useEffect(() => {
         if (flows.length === 0) {
             getAllChatflowsApi.request()
-            getInferencesApi.request({
-                startDate: new Date(),
-                endDate: new Date(),
-                summaryOrDetail: 'summary'
-            })
+            dateFilterChange()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -54,7 +51,6 @@ const EvalMetrics = () => {
     useEffect(() => {
         if (getInferencesApi.data) {
             const originalData = getInferencesApi.data.summary
-            console.log('getInferencesApi.data.totalCount === ' + getInferencesApi.data.totalCount)
             setInferenceData(originalData)
             setTotalInferenceCount(getInferencesApi.data.totalCount)
         }
@@ -67,7 +63,7 @@ const EvalMetrics = () => {
                 let flowNames = [
                     {
                         label: '<All>',
-                        name: 'all'
+                        name: ''
                     }
                 ]
                 for (let i = 0; i < chatflows.length; i += 1) {
@@ -121,7 +117,7 @@ const EvalMetrics = () => {
         startDate.setHours(0, 0, 0, 0)
         endDate.setHours(23, 59, 59, 999)
         getInferencesApi.request({
-            chatflowId: selectedChatflow === 'all' ? undefined : selectedChatflow,
+            chatflowId: selectedChatflow === '' || selectedChatflow === 'all' ? undefined : selectedChatflow,
             startDate: startDate,
             endDate: endDate,
             chatType: undefined,
@@ -152,7 +148,6 @@ const EvalMetrics = () => {
                             options={flows}
                             onSelect={(newValue) => {
                                 setSelectedChatflow(newValue)
-                                dateFilterChange()
                             }}
                             value={selectedChatflow}
                         />
@@ -167,7 +162,7 @@ const EvalMetrics = () => {
                             <MetricsDateToolbar onDateFilterChange={dateFilterChange} />
                             <Box sx={{ width: 5 }} />
                             <ButtonGroup disableElevation aria-label='outlined primary button group'>
-                                <StyledButton style={{ marginLeft: '18px' }} variant='contained'>
+                                <StyledButton onClick={dateFilterChange} style={{ marginLeft: '18px' }} variant='contained'>
                                     Refresh
                                 </StyledButton>
                             </ButtonGroup>
@@ -209,8 +204,8 @@ const EvalMetrics = () => {
                         <Grid key='2' item lg={6} md={6} sm={12} xs={12}>
                             <Stack flexDirection='column' rowGap={2}>
                                 <MetricsItemCard
-                                    data={{ header: 'AVG TOKENS USED', value: '20' }}
-                                    component={<MetricsBarChart chartType={'AVG_TOKENS'} sx={{ pt: 2 }} />}
+                                    data={{ header: 'FEEDBACK', value: '20' }}
+                                    component={<MetricsPercentAreaChart chartType={'FEEDBACK'} sx={{ pt: 2 }} />}
                                 />
                             </Stack>
                         </Grid>

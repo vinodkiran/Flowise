@@ -316,7 +316,7 @@ const barData = [
         count: 0
     }
 ]
-export const MetricsBarChart = ({ isLoading, data, chartType, onClick }) => {
+export const MetricsBarChart = ({ isLoading, data, chartType, onClick, onBarClick }) => {
     return (
         <ResponsiveContainer width='95%' height={300}>
             <BarChart
@@ -335,7 +335,12 @@ export const MetricsBarChart = ({ isLoading, data, chartType, onClick }) => {
                 <XAxis dataKey='x' />
                 <YAxis dataKey='y' />
                 <Tooltip />
-                <Bar dataKey='y' fill={chartType === 'TOTAL_INFERENCES' ? '#82ca9d' : '#e8629c'} />
+                <Bar
+                    dataKey='y'
+                    fill={chartType === 'TOTAL_INFERENCES' ? '#82ca9d' : '#e8629c'}
+                    onClick={onBarClick}
+                    label={{ position: 'top' }}
+                />
             </BarChart>
         </ResponsiveContainer>
     )
@@ -345,5 +350,6 @@ MetricsBarChart.propTypes = {
     isLoading: PropTypes.bool,
     data: PropTypes.object,
     chartType: PropTypes.string,
-    onClick: PropTypes.func
+    onClick: PropTypes.func,
+    onBarClick: PropTypes.func
 }

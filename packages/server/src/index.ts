@@ -10,7 +10,7 @@ import logger from './utils/logger'
 import { expressRequestLogger } from './utils/logger'
 import { v4 as uuidv4 } from 'uuid'
 import OpenAI from 'openai'
-import { FindOptionsWhere, MoreThanOrEqual, LessThanOrEqual } from 'typeorm'
+import { FindOptionsWhere, MoreThanOrEqual, LessThanOrEqual, Between } from 'typeorm'
 import {
     IChatFlow,
     IncomingInput,
@@ -1431,7 +1431,13 @@ export class App {
             chatmessages.map((message, index) => {
                 const date = message.createdDate
                 if (date) {
-                    let dateStr = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + (date.getDay() + 1)
+                    let dateStr = date.toISOString().split('T')[0]
+                    console.log(date + ' --- ' + dateStr)
+                    // let month = date.getMonth() + 1
+                    // let day = date.getDate()
+                    // let dateFilterString = date.getFullYear() + '-' + (month < 9 ? '0' + month : month) + '-' + (day < 9 ? '0' + day : day)
+                    // @ts-ignore
+                    console.log('dfs= ' + dateStr + ' ' + dateCountMap.get(dateStr))
                     // @ts-ignore
                     dateCountMap.set(dateStr, dateCountMap.has(dateStr) ? dateCountMap.get(dateStr) + 1 : 1)
                 }
@@ -1567,6 +1573,7 @@ export class App {
         let toDate
         if (endDate) toDate = this.setDateToStartOrEndOfDay(endDate, 'end')
 
+        console.log('chatflowid ' + chatflowid)
         console.log('fromDate ' + fromDate)
         console.log('toDate ' + toDate)
 
@@ -1577,8 +1584,7 @@ export class App {
                 chatId,
                 memoryType: memoryType ?? undefined,
                 sessionId: sessionId ?? undefined,
-                ...(fromDate && { createdDate: MoreThanOrEqual(fromDate) }),
-                ...(toDate && { createdDate: LessThanOrEqual(toDate) }),
+                createdDate: toDate && fromDate ? Between(fromDate, toDate) : undefined,
                 id: messageId ?? undefined
             },
             order: {
