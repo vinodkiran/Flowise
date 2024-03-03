@@ -212,3 +212,17 @@ export interface ICredentialReqBody {
 export interface ICredentialReturnResponse extends ICredential {
     plainDataObj: ICredentialDataDecrypted
 }
+
+export interface IDataset {
+    id: string
+    name: string
+    createdDate: Date
+    updatedDate: Date
+}
+export interface IDatasetRow {
+    id: string
+    datasetId: string
+    input: string
+    output: string
+    updatedDate: Date
+}

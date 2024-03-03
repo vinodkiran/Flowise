@@ -9,11 +9,24 @@ import {
     IconVariable,
     IconGraph,
     IconAB,
-    IconAbacus
+    IconDatabase,
+    IconTestPipe
 } from '@tabler/icons'
 
 // constant
-const icons = { IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot, IconVariable, IconGraph, IconAB, IconAbacus }
+const icons = {
+    IconHierarchy,
+    IconBuildingStore,
+    IconKey,
+    IconTool,
+    IconLock,
+    IconRobot,
+    IconVariable,
+    IconGraph,
+    IconAB,
+    IconDatabase,
+    IconTestPipe
+}
 
 // ==============================|| DASHBOARD MENU ITEMS ||============================== //
 
@@ -84,7 +97,7 @@ const dashboard = {
             type: 'collapse',
             children: [
                 {
-                    id: 'apikey',
+                    id: 'metrics',
                     title: 'Metrics',
                     type: 'item',
                     url: '/metrics',
@@ -92,19 +105,27 @@ const dashboard = {
                     breadcrumbs: true
                 },
                 {
-                    id: 'apikey',
+                    id: 'dataset',
+                    title: 'Datasets',
+                    type: 'item',
+                    url: '/dataset',
+                    icon: icons.IconDatabase,
+                    breadcrumbs: true
+                },
+                {
+                    id: 'eval',
+                    title: 'Evaluations',
+                    type: 'item',
+                    url: '/evaluation',
+                    icon: icons.IconTestPipe,
+                    breadcrumbs: true
+                },
+                {
+                    id: 'benchmarking',
                     title: 'Benchmarking',
                     type: 'item',
                     url: '/benchmarking',
                     icon: icons.IconAB,
-                    breadcrumbs: true
-                },
-                {
-                    id: 'apikey',
-                    title: 'RAGAS',
-                    type: 'item',
-                    url: '/ragas',
-                    icon: icons.IconAbacus,
                     breadcrumbs: true
                 }
             ]

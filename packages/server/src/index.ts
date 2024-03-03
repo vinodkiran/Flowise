@@ -6,50 +6,49 @@ import http from 'http'
 import * as fs from 'fs'
 import basicAuth from 'express-basic-auth'
 import { Server } from 'socket.io'
-import logger from './utils/logger'
-import { expressRequestLogger } from './utils/logger'
+import logger, { expressRequestLogger } from './utils/logger'
 import { v4 as uuidv4 } from 'uuid'
 import OpenAI from 'openai'
-import { FindOptionsWhere, MoreThanOrEqual, LessThanOrEqual, Between } from 'typeorm'
+import { Between, FindOptionsWhere, LessThanOrEqual, MoreThanOrEqual } from 'typeorm'
 import {
-    IChatFlow,
-    IncomingInput,
-    IReactFlowNode,
-    IReactFlowObject,
-    INodeData,
-    ICredentialReturnResponse,
     chatType,
+    IChatFlow,
     IChatMessage,
+    ICredentialReturnResponse,
     IDepthQueue,
-    INodeDirectedGraph
+    IncomingInput,
+    INodeData,
+    INodeDirectedGraph,
+    IReactFlowNode,
+    IReactFlowObject
 } from './Interface'
 import {
-    getNodeModulesPackagePath,
-    getStartingNodes,
     buildFlow,
-    getEndingNodes,
+    clearSessionMemory,
     constructGraphs,
-    resolveVariables,
+    databaseEntities,
+    decryptCredentialData,
+    findAvailableConfigs,
+    findMemoryNode,
+    getAllConnectedNodes,
+    getAppVersion,
+    getEncryptionKey,
+    getEndingNodes,
+    getMemorySessionId,
+    getNodeModulesPackagePath,
+    getSessionChatHistory,
+    getStartingNodes,
+    getTelemetryFlowObj,
+    getUserHome,
+    isFlowValidForStream,
+    isSameOverrideConfig,
     isStartNodeDependOnInput,
     mapMimeTypeToInputField,
-    findAvailableConfigs,
-    isSameOverrideConfig,
-    isFlowValidForStream,
-    databaseEntities,
-    transformToCredentialEntity,
-    decryptCredentialData,
     replaceInputsWithConfig,
-    getEncryptionKey,
-    getMemorySessionId,
-    getUserHome,
-    getSessionChatHistory,
-    getAllConnectedNodes,
-    clearSessionMemory,
-    findMemoryNode,
-    getTelemetryFlowObj,
-    getAppVersion
+    resolveVariables,
+    transformToCredentialEntity
 } from './utils'
-import { cloneDeep, omit, uniqWith, isEqual } from 'lodash'
+import { cloneDeep, isEqual, omit, uniqWith } from 'lodash'
 import { getDataSource } from './DataSource'
 import { NodesPool } from './NodesPool'
 import { ChatFlow } from './database/entities/ChatFlow'
@@ -59,15 +58,17 @@ import { Tool } from './database/entities/Tool'
 import { Assistant } from './database/entities/Assistant'
 import { ChatflowPool } from './ChatflowPool'
 import { CachePool } from './CachePool'
-import { ICommonObject, IMessage, INodeOptionsValue, handleEscapeCharacters, webCrawl, xmlScrape } from 'flowise-components'
+import { handleEscapeCharacters, ICommonObject, IMessage, INodeOptionsValue, webCrawl, xmlScrape } from 'flowise-components'
 import { createRateLimiter, getRateLimiter, initializeRateLimiter } from './utils/rateLimit'
 import { addAPIKey, compareKeys, deleteAPIKey, getApiKey, getAPIKeys, updateAPIKey } from './utils/apiKey'
-import { sanitizeMiddleware, getCorsOptions, getAllowedIframeOrigins } from './utils/XSS'
+import { getAllowedIframeOrigins, getCorsOptions, sanitizeMiddleware } from './utils/XSS'
 import axios from 'axios'
 import { Client } from 'langchainhub'
 import { parsePrompt } from './utils/hub'
 import { Telemetry } from './utils/telemetry'
 import { Variable } from './database/entities/Variable'
+import { Dataset } from './database/entities/Dataset'
+import { DatasetRow } from './database/entities/DatasetRow'
 
 export class App {
     app: express.Application
@@ -1461,6 +1462,105 @@ export class App {
                     messages: chatmessages
                 })
             }
+        })
+
+        // ----------------------------------------
+        // Dataset
+        // ----------------------------------------
+        this.app.get('/api/v1/datasets', async (req: Request, res: Response) => {
+            const datasets = await getDataSource().getRepository(Dataset).find()
+            const returnObj: Dataset[] = []
+            // TODO: This is a hack to get the row count for each dataset. Need to find a better way to do this
+            for (const dataset of datasets) {
+                ;(dataset as any).rowCount = await getDataSource()
+                    .getRepository(DatasetRow)
+                    .count({
+                        where: { datasetId: dataset.id }
+                    })
+                returnObj.push(dataset)
+            }
+            return res.json(returnObj)
+        })
+
+        this.app.get('/api/v1/dataset/:id', async (req: Request, res: Response) => {
+            const dataset = await this.AppDataSource.getRepository(Dataset).findOneBy({
+                id: req.params.id
+            })
+            const items = await getDataSource()
+                .getRepository(DatasetRow)
+                .find({
+                    where: { datasetId: req.params.id }
+                })
+            return res.json({
+                ...dataset,
+                rows: items
+            })
+        })
+
+        // Create new dataset
+        this.app.post('/api/v1/datasets', async (req: Request, res: Response) => {
+            const body = req.body
+            const newDs = new Dataset()
+            Object.assign(newDs, body)
+            const dataset = this.AppDataSource.getRepository(Dataset).create(newDs)
+            const results = await this.AppDataSource.getRepository(Dataset).save(dataset)
+            return res.json(results)
+        })
+
+        // Update dataset
+        this.app.put('/api/v1/datasets/:id', async (req: Request, res: Response) => {
+            const dataset = await this.AppDataSource.getRepository(Dataset).findOneBy({
+                id: req.params.id
+            })
+
+            if (!dataset) return res.status(404).send(`Dataset ${req.params.id} not found`)
+
+            const body = req.body
+            const updateDataset = new Dataset()
+            Object.assign(updateDataset, body)
+            this.AppDataSource.getRepository(Dataset).merge(dataset, updateDataset)
+            const result = await this.AppDataSource.getRepository(Dataset).save(dataset)
+
+            return res.json(result)
+        })
+
+        // Delete dataset via id
+        this.app.delete('/api/v1/datasets/:id', async (req: Request, res: Response) => {
+            const results = await this.AppDataSource.getRepository(Dataset).delete({ id: req.params.id })
+            return res.json(results)
+        })
+
+        // Create new row in a given dataset
+        this.app.post('/api/v1/datasetrow', async (req: Request, res: Response) => {
+            const body = req.body
+            const newDs = new DatasetRow()
+            Object.assign(newDs, body)
+            const row = this.AppDataSource.getRepository(DatasetRow).create(newDs)
+            const results = await this.AppDataSource.getRepository(DatasetRow).save(row)
+            return res.json(results)
+        })
+
+        // Update row for a dataset
+        this.app.put('/api/v1/datasetrow/:id', async (req: Request, res: Response) => {
+            const item = await this.AppDataSource.getRepository(DatasetRow).findOneBy({
+                id: req.params.id
+            })
+
+            if (!item) return res.status(404).send(`Dataset Row ${req.params.id} not found`)
+
+            const body = req.body
+            const updateItem = new DatasetRow()
+            Object.assign(updateItem, body)
+            this.AppDataSource.getRepository(DatasetRow).merge(item, updateItem)
+            const result = await this.AppDataSource.getRepository(DatasetRow).save(item)
+
+            return res.json(result)
+        })
+
+        // Delete dataset row via id
+        this.app.delete('/api/v1/datasetrow/:id', async (req: Request, res: Response) => {
+            const results = await this.AppDataSource.getRepository(DatasetRow).delete({ id: req.params.id })
+            return res.json(results)
         })
 
         // ----------------------------------------
