@@ -17,11 +17,11 @@ import { LunaryHandler } from '@langchain/community/callbacks/handlers/lunary'
 import { getCredentialData, getCredentialParam } from './utils'
 import { ICommonObject, INodeData } from './Interface'
 
-interface AgentRun extends Run {
+export interface AgentRun extends Run {
     actions: AgentAction[]
 }
 
-function tryJsonStringify(obj: unknown, fallback: string) {
+export function tryJsonStringify(obj: unknown, fallback: string) {
     try {
         return JSON.stringify(obj, null, 2)
     } catch (err) {
@@ -29,7 +29,7 @@ function tryJsonStringify(obj: unknown, fallback: string) {
     }
 }
 
-function elapsed(run: Run): string {
+export function elapsed(run: Run): string {
     if (!run.end_time) return ''
     const elapsed = run.end_time - run.start_time
     if (elapsed < 1000) {
