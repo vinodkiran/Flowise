@@ -1563,6 +1563,11 @@ export class App {
             return res.json(results)
         })
 
+        // Create new evaluation
+        this.app.post('/api/v1/evaluation', async (req: Request, res: Response) => {
+            const body = req.body
+            return res.json({})
+        })
         // ----------------------------------------
         // Serve UI static
         // ----------------------------------------

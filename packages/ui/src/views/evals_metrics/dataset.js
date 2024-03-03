@@ -166,7 +166,6 @@ const EvalDatasets = () => {
     useEffect(() => {
         if (getAllDatasets.data) {
             setDatasets(getAllDatasets.data)
-            console.log(datasets)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [getAllDatasets.data])
