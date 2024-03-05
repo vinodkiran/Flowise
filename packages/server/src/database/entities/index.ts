@@ -4,8 +4,10 @@ import { Credential } from './Credential'
 import { Tool } from './Tool'
 import { Assistant } from './Assistant'
 import { Variable } from './Variable'
-import { Dataset } from "./Dataset";
-import { DatasetRow } from "./DatasetRow";
+import { Dataset } from './Dataset'
+import { DatasetRow } from './DatasetRow'
+import { EvaluationRun } from './EvaluationRun'
+import { Evaluation } from './Evaluation'
 
 export const entities = {
     ChatFlow,
@@ -15,5 +17,7 @@ export const entities = {
     Assistant,
     Variable,
     Dataset,
-    DatasetRow
+    DatasetRow,
+    Evaluation,
+    EvaluationRun
 }

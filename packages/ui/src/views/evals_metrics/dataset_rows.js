@@ -15,7 +15,8 @@ import {
     IconButton,
     Button,
     Typography,
-    Breadcrumbs
+    Breadcrumbs,
+    ButtonGroup
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
@@ -33,7 +34,7 @@ import datasetsApi from 'api/dataset'
 // Hooks
 
 // icons
-import { IconTrash, IconEdit, IconPlus, IconX } from '@tabler/icons'
+import { IconTrash, IconEdit, IconPlus, IconX, IconUpload } from '@tabler/icons'
 import ConfirmDialog from '../../ui-component/dialog/ConfirmDialog'
 import AddEditDatasetRowDialog from './AddEditDatasetRowDialog'
 import Link from '@mui/material/Link'
@@ -65,7 +66,7 @@ const EvalDatasets = () => {
         <Link underline='hover' key='1' color='inherit'>
             {''}
         </Link>,
-        <Link underline='hover' key='2' color='inherit' href='/packages/ui/src/views/evals_metrics/dataset'>
+        <Link underline='hover' key='2' color='inherit' href='/dataset'>
             Datasets
         </Link>,
         <Typography key='3' color='text.primary'>
@@ -186,16 +187,29 @@ const EvalDatasets = () => {
                         }}
                     >
                         <h1 style={{ marginRight: '18px' }}>Dataset : {selectedDatasetName}</h1>
-
-                        <StyledButton
-                            variant='contained'
-                            sx={{ maxHeight: 40 }}
-                            style={{ marginLeft: '18px' }}
-                            onClick={addNew}
-                            startIcon={<IconPlus />}
-                        >
-                            New Item
-                        </StyledButton>
+                        <ButtonGroup sx={{ maxHeight: 40 }} disableElevation variant='contained' aria-label='outlined primary button group'>
+                            <Box sx={{ width: 5 }} />
+                            <ButtonGroup disableElevation aria-label='outlined primary button group'>
+                                <StyledButton
+                                    variant='outlined'
+                                    sx={{ maxHeight: 40 }}
+                                    style={{ marginLeft: '18px' }}
+                                    onClick={addNew}
+                                    startIcon={<IconUpload />}
+                                >
+                                    Upload CSV
+                                </StyledButton>
+                                <StyledButton
+                                    variant='contained'
+                                    sx={{ maxHeight: 40 }}
+                                    style={{ marginLeft: '18px' }}
+                                    onClick={addNew}
+                                    startIcon={<IconPlus />}
+                                >
+                                    New Item
+                                </StyledButton>
+                            </ButtonGroup>
+                        </ButtonGroup>
                     </Toolbar>
                 </Box>
                 <TableContainer component={Paper}>

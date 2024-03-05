@@ -208,33 +208,33 @@ const EvalDatasets = () => {
                                 variant='contained'
                                 aria-label='outlined primary button group'
                             >
-                                <ButtonGroup disableElevation variant='contained' aria-label='outlined primary button group'>
-                                    <ToggleButtonGroup
-                                        sx={{ maxHeight: 40 }}
-                                        value={view}
-                                        color='primary'
-                                        exclusive
-                                        onChange={handleChange}
-                                    >
-                                        <ToggleButton
-                                            sx={{ color: theme?.customization?.isDarkMode ? 'white' : 'inherit' }}
-                                            variant='contained'
-                                            value='card'
-                                            title='Card View'
-                                        >
-                                            <IconLayoutGrid />
-                                        </ToggleButton>
-                                        <ToggleButton
-                                            sx={{ color: theme?.customization?.isDarkMode ? 'white' : 'inherit' }}
-                                            variant='contained'
-                                            value='list'
-                                            title='List View'
-                                        >
-                                            <IconList />
-                                        </ToggleButton>
-                                    </ToggleButtonGroup>
-                                </ButtonGroup>
-                                <Box sx={{ width: 5 }} />
+                                {/*<ButtonGroup disableElevation variant='contained' aria-label='outlined primary button group'>*/}
+                                {/*    <ToggleButtonGroup*/}
+                                {/*        sx={{ maxHeight: 40 }}*/}
+                                {/*        value={view}*/}
+                                {/*        color='primary'*/}
+                                {/*        exclusive*/}
+                                {/*        onChange={handleChange}*/}
+                                {/*    >*/}
+                                {/*        <ToggleButton*/}
+                                {/*            sx={{ color: theme?.customization?.isDarkMode ? 'white' : 'inherit' }}*/}
+                                {/*            variant='contained'*/}
+                                {/*            value='card'*/}
+                                {/*            title='Card View'*/}
+                                {/*        >*/}
+                                {/*            <IconLayoutGrid />*/}
+                                {/*        </ToggleButton>*/}
+                                {/*        <ToggleButton*/}
+                                {/*            sx={{ color: theme?.customization?.isDarkMode ? 'white' : 'inherit' }}*/}
+                                {/*            variant='contained'*/}
+                                {/*            value='list'*/}
+                                {/*            title='List View'*/}
+                                {/*        >*/}
+                                {/*            <IconList />*/}
+                                {/*        </ToggleButton>*/}
+                                {/*    </ToggleButtonGroup>*/}
+                                {/*</ButtonGroup>*/}
+                                {/*<Box sx={{ width: 5 }} />*/}
                                 <ButtonGroup disableElevation aria-label='outlined primary button group'>
                                     <StyledButton variant='contained' onClick={addNew} startIcon={<IconPlus />}>
                                         Add New

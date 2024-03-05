@@ -1,58 +1,83 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
 
 // material-ui
-import { Box, IconButton, Paper, Table, TableBody, TableContainer, TableHead, TableRow, Toolbar } from '@mui/material'
+import { Box, Button, ButtonGroup, IconButton, Paper, Table, TableBody, TableContainer, TableHead, TableRow, Toolbar } from '@mui/material'
 
 // API
-import datasetsApi from 'api/dataset'
+import evaluationApi from 'api/evaluation'
 
 // const
 import TableCell from '@mui/material/TableCell'
 import MainCard from '../../ui-component/cards/MainCard'
 import { useTheme } from '@mui/material/styles'
 import { useSelector } from 'react-redux'
-import { IconEdit, IconPlus, IconTrash } from '@tabler/icons'
+import { IconPlus, IconRefresh, IconTrash, IconTable } from '@tabler/icons'
 import { StyledButton } from '../../ui-component/button/StyledButton'
 import CreateEvaluationDialog from './CreateEvaluationDialog'
 import { BackdropLoader } from 'ui-component/loading/BackdropLoader'
 import useApi from '../../hooks/useApi'
-import { baseURL } from '../../store/constant'
+import moment from 'moment/moment'
+import { useNavigate } from 'react-router-dom'
 
 const EvalsEvaluation = () => {
+    const navigate = useNavigate()
+
     const theme = useTheme()
     const customization = useSelector((state) => state.customization)
 
-    const getDatasetRows = useApi(datasetsApi.getDatasetRows)
+    const createNewEvaluation = useApi(evaluationApi.createEvaluation)
+    const getAllEvaluations = useApi(evaluationApi.getAllEvaluations)
+    const deleteEvaluation = useApi(evaluationApi.deleteEvaluation)
     const [showNewEvaluationDialog, setShowNewEvaluationDialog] = useState(false)
     const [dialogProps, setDialogProps] = useState({})
     const [rows, setRows] = useState([])
     const [loading, setLoading] = useState(false)
-    const [chatflow, setChatflow] = useState('')
-    const [dataset, setDataset] = useState('')
-    const [evaluationType, setEvaluationType] = useState('')
 
     useEffect(() => {
-        if (rows.length === 0) {
-            setRows([])
-        }
+        getAllEvaluations.request()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
+    useEffect(() => {
+        if (getAllEvaluations.data) {
+            const rows = getAllEvaluations.data
+            if (rows) {
+                for (let i = 0; i < rows.length; i++) {
+                    rows[i].runDate = moment(rows[i].runDate).format('DD-MMM-YY HH:MM:SS')
+                    rows[i].average_metrics = JSON.parse(rows[i].average_metrics)
+                }
+                setRows(rows)
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [getAllEvaluations.data])
+
+    useEffect(() => {
+        if (createNewEvaluation.data) {
+            const rows = createNewEvaluation.data
+            for (let i = 0; i < rows.length; i++) {
+                rows[i].runDate = moment(rows[i].runDate).format('DD-MMM-YY HH:MM:SS')
+                rows[i].average_metrics = JSON.parse(rows[i].average_metrics)
+            }
+            setRows(rows)
+        }
+        //console.log(saveEvaluationData)
+        setLoading(false)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [createNewEvaluation.data])
+
     const onConfirm = (evaluationData) => {
         setShowNewEvaluationDialog(false)
-        setChatflow(evaluationData.chatflow)
-        setDataset(evaluationData.dataset)
-        setEvaluationType(evaluationData.evaluationType)
-        //getDatasetRows.request(evaluationData.dataset)
         setLoading(true)
-        const saveEvaluationData = {
-            chatflowId: chatflow,
-            datasetId: dataset,
-            evaluationType: evaluationType
-        }
-        console.log(saveEvaluationData)
-        setLoading(false)
+        createNewEvaluation.request(evaluationData)
+    }
+
+    const onRefresh = () => {
+        getAllEvaluations.request()
+    }
+
+    const goToRows = (item) => {
+        navigate(`/evaluation_rows/${item.id}`)
     }
 
     const createEvaluation = () => {
@@ -66,58 +91,16 @@ const EvalsEvaluation = () => {
         setShowNewEvaluationDialog(true)
     }
 
-    // useEffect(() => {
-    //     if (getDatasetRows.data) {
-    //         evaluate()
-    //     }
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [getDatasetRows.data])
-
-    const evaluate = async () => {
-        setLoading(true)
-        let responseData = await fetchPredictions(getDatasetRows.data.rows)
-        const saveEvaluationData = {
-            chatflowId: chatflow,
-            datasetId: dataset,
-            evaluationType: evaluationType,
-            rows: responseData.map((row) => {
-                return {
-                    input: row.input,
-                    output: row.output,
-                    prediction: row.prediction,
-                    time: row.time
-                }
-            })
+    const showMetrics = (metrics) => {
+        if (!metrics) {
+            return ''
         }
-        console.log(saveEvaluationData)
-        setLoading(false)
-    }
-
-    const fetchPredictions = async (inputFields) => {
-        const dataFields = [...inputFields]
-        try {
-            const promises = []
-            dataFields.map(async (data, index) => {
-                let startTime = performance.now()
-                let response1 = axios
-                    .post(`${baseURL}/api/v1/prediction/${chatflow}`, { question: data.input })
-                    .then(async function (response) {
-                        const endTime = performance.now()
-                        data.time = (endTime - startTime).toFixed(2) + ' ms'
-                        inputFields[index].prediction = response.data.text
-                        inputFields[index].time = data.time
-                        return response.data
-                    })
-                    .catch(function (error) {
-                        console.error(error)
-                    })
-                promises.push(response1)
-            })
-            await Promise.all(promises)
-        } catch (e) {
-            console.error(e)
-        }
-        return dataFields
+        let displayMetrics = ''
+        const metricsObj = JSON.parse(metrics)
+        Object.getOwnPropertyNames(metricsObj).forEach((key) => {
+            displayMetrics += "<Chip variant='outlined' color='primary' label=" + metricsObj[key] + '/> '
+        })
+        return displayMetrics
     }
 
     return (
@@ -137,26 +120,42 @@ const EvalsEvaluation = () => {
                             }}
                         >
                             <h1 style={{ marginRight: '18px' }}>Evaluation</h1>
-                            <StyledButton
-                                variant='contained'
+                            <ButtonGroup
                                 sx={{ maxHeight: 40 }}
-                                style={{ marginLeft: '18px' }}
-                                onClick={createEvaluation}
-                                startIcon={<IconPlus />}
+                                disableElevation
+                                variant='contained'
+                                aria-label='outlined primary button group'
                             >
-                                New Evaluation
-                            </StyledButton>
+                                <Box sx={{ width: 5 }} />
+                                <ButtonGroup disableElevation aria-label='outlined primary button group'>
+                                    <StyledButton variant='outlined' sx={{ maxHeight: 40 }} onClick={onRefresh} startIcon={<IconRefresh />}>
+                                        Refresh
+                                    </StyledButton>
+                                    <StyledButton
+                                        variant='contained'
+                                        style={{ marginLeft: '18px' }}
+                                        sx={{ maxHeight: 40 }}
+                                        onClick={createEvaluation}
+                                        startIcon={<IconPlus />}
+                                    >
+                                        New Evaluation
+                                    </StyledButton>
+                                </ButtonGroup>
+                            </ButtonGroup>
                         </Toolbar>
                     </Box>
                     <TableContainer component={Paper}>
                         <Table aria-label='simple table'>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell width='30%'>Chatflow</TableCell>
-                                    <TableCell width='20%'>Dataset</TableCell>
-                                    <TableCell width='15%'>Type</TableCell>
+                                    <TableCell width='10%'>Status</TableCell>
                                     <TableCell width='15%'>Date</TableCell>
-                                    <TableCell width='20%' colSpan='2'>
+                                    <TableCell width='10%'>Name</TableCell>
+                                    <TableCell width='10%'>Type</TableCell>
+                                    <TableCell width='15%'>Chatflow</TableCell>
+                                    <TableCell width='15%'>Dataset</TableCell>
+                                    <TableCell width='15%'>Avg. Metrics</TableCell>
+                                    <TableCell width='10%' colSpan='2'>
                                         Actions
                                     </TableCell>
                                 </TableRow>
@@ -172,11 +171,28 @@ const EvalsEvaluation = () => {
                                 {rows.length > 0 &&
                                     rows.map((item, index) => (
                                         <TableRow key={index} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                            <TableCell>{item.input}</TableCell>
-                                            <TableCell>{item.output}</TableCell>
+                                            <TableCell>{item.status === 'pending' ? 'Pending' : 'Complete'}</TableCell>
+                                            <TableCell>{moment(item.runDate).format('DD-MMM-YY HH:MM:SS')}</TableCell>
                                             <TableCell>
-                                                <IconButton title='Edit' color='primary'>
-                                                    <IconEdit />
+                                                <Button onClick={() => goToRows(item)} sx={{ textAlign: 'left' }}>
+                                                    {item.name}
+                                                </Button>
+                                            </TableCell>
+                                            <TableCell>{item.evaluationType}</TableCell>
+                                            <TableCell>{item.chatflowName}</TableCell>
+                                            <TableCell>{item.datasetName}</TableCell>
+                                            <TableCell>
+                                                {item.average_metrics?.totalRuns && (
+                                                    <div> Num of Runs: {item?.average_metrics?.totalRuns}</div>
+                                                )}
+                                                {item.average_metrics?.averageCost && <div> Avg Cost: 0</div>}
+                                                {item.average_metrics?.averageLatency && (
+                                                    <div> Avg Latency: {item?.average_metrics?.averageLatency}</div>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <IconButton title='Run Details' color='primary' onClick={() => goToRows(item)}>
+                                                    <IconTable />
                                                 </IconButton>
                                             </TableCell>
                                             <TableCell>

@@ -31,6 +31,7 @@ const EvalMetricsInferences = Loadable(lazy(() => import('views/evals_metrics/in
 const EvalMetricsLatency = Loadable(lazy(() => import('views/evals_metrics/latency')))
 const EvalBenchmarking = Loadable(lazy(() => import('views/evals_metrics/benchmarking')))
 const EvalEvaluation = Loadable(lazy(() => import('views/evals_metrics/evaluation')))
+const EvalEvaluationRows = Loadable(lazy(() => import('views/evals_metrics/evaluation_rows')))
 const EvalDatasets = Loadable(lazy(() => import('views/evals_metrics/dataset')))
 const EvalDatasetRows = Loadable(lazy(() => import('views/evals_metrics/dataset_rows')))
 
@@ -95,6 +96,10 @@ const MainRoutes = {
         {
             path: '/evaluation',
             element: <EvalEvaluation />
+        },
+        {
+            path: '/evaluation_rows/:id',
+            element: <EvalEvaluationRows />
         },
         {
             path: '/dataset_rows/:id',

@@ -15,7 +15,7 @@ export class AddDatasets1709360247876 implements MigrationInterface {
         await queryRunner.query(
             `CREATE TABLE IF NOT EXISTS dataset_row (
                 id uuid NOT NULL DEFAULT uuid_generate_v4(),
-                datasetId uuid NOT NULL DEFAULT uuid_generate_v4(),
+                datasetId varchar NOT NULL DEFAULT,
                 "input" varchar NOT NULL,
                 "output" text NULL,
                 "updatedDate" timestamp NOT NULL DEFAULT now(),

@@ -2,18 +2,15 @@ import { createPortal } from 'react-dom'
 import PropTypes from 'prop-types'
 import { useState, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
-import { enqueueSnackbar as enqueueSnackbarAction, closeSnackbar as closeSnackbarAction } from 'store/actions'
 
 // Material
 import {
-    Button,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
     Box,
     Typography,
-    Toolbar,
     Stack,
     RadioGroup,
     TableContainer,
@@ -24,7 +21,8 @@ import {
     TableBody,
     FormControlLabel,
     Radio,
-    Chip
+    Chip,
+    OutlinedInput
 } from '@mui/material'
 
 // Project imports
@@ -32,7 +30,7 @@ import { StyledButton } from 'ui-component/button/StyledButton'
 import ConfirmDialog from 'ui-component/dialog/ConfirmDialog'
 
 // Icons
-import { IconX, IconTestPipe2, IconPlus } from '@tabler/icons'
+import { IconTestPipe2 } from '@tabler/icons'
 
 // API
 import chatflowsApi from 'api/chatflows'
@@ -46,6 +44,7 @@ import useNotifier from 'utils/useNotifier'
 import { Dropdown } from '../../ui-component/dropdown/Dropdown'
 import TableCell from '@mui/material/TableCell'
 import CredentialInputHandler from '../canvas/CredentialInputHandler'
+import { TooltipWithParser } from '../../ui-component/tooltip/TooltipWithParser'
 
 // const
 
@@ -59,11 +58,17 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
     useNotifier()
 
     const createNewEvaluation = async () => {
+        const chatflowName = flows.find((f) => f.name === chatflow)?.label
+        const datasetName = datasets.find((f) => f.name === dataset)?.label
+
         onConfirm({
-            chatflow: chatflow,
-            dataset: dataset,
+            name: evaluationName,
             evaluationType: evaluationType,
-            credentialId: credentialId
+            credentialId: credentialId,
+            chatflowId: chatflow,
+            chatflowName: chatflowName,
+            datasetId: dataset,
+            datasetName: datasetName
         })
     }
 
@@ -77,6 +82,8 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
     const [datasets, setDatasets] = useState([])
     const [credentialId, setCredentialId] = useState('')
     const [evaluationType, setEvaluationType] = useState('simple')
+    const [evaluationName, setEvaluationName] = useState('')
+
     useEffect(() => {
         if (flows.length === 0) {
             getAllChatflowsApi.request()
@@ -133,7 +140,7 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
     const component = show ? (
         <Dialog
             fullWidth
-            maxWidth='sm'
+            maxWidth='md'
             open={show}
             onClose={onCancel}
             aria-labelledby='alert-dialog-title'
@@ -164,6 +171,20 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
                 </div>
             </DialogTitle>
             <DialogContent>
+                <Box sx={{ flexGrow: 1 }}>
+                    <Stack sx={{ position: 'relative' }} direction='row'>
+                        <Typography variant='overline'>Name</Typography>
+                        <TooltipWithParser style={{ marginLeft: 10 }} title={'Friendly name to tag this run.'} />
+                    </Stack>
+                    <OutlinedInput
+                        id='evaluationName'
+                        type='string'
+                        fullWidth
+                        value={evaluationName}
+                        name='evaluationName'
+                        onChange={(e) => setEvaluationName(e.target.value)}
+                    />
+                </Box>
                 <Box sx={{ flexGrow: 1 }}>
                     <Stack sx={{ position: 'relative' }} direction='row'>
                         <Typography variant='overline'>Chatflow to Evaluate</Typography>
@@ -214,13 +235,19 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
                                             <Typography variant='body2'>
                                                 <br />
                                                 Uses the <span style={{ fontStyle: 'italic' }}>input</span> column from the dataset and
-                                                executes the selected Chatflow.
+                                                executes the selected Chatflow, and compares the results with the output column.
                                             </Typography>
                                             <Chip color='primary' variant='outlined' label={'latency'}>
                                                 latency
                                             </Chip>{' '}
                                             <Chip color='primary' variant='outlined' label={'cost'}>
                                                 cost
+                                            </Chip>{' '}
+                                            <Chip color='primary' variant='outlined' label={'BERT Score'}>
+                                                bert score
+                                            </Chip>{' '}
+                                            <Chip color='primary' variant='outlined' label={'token count'}>
+                                                token count
                                             </Chip>
                                         </TableCell>
                                     </TableRow>
@@ -233,10 +260,11 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
                                             <Typography variant='body2'>
                                                 <br />
                                                 Uses the <span style={{ fontStyle: 'italic' }}>input</span> column from the dataset and
-                                                executes the selected Chatflow, comparing the results with the
-                                                <span style={{ fontStyle: 'italic' }}> output</span> column. Currently, only{' '}
-                                                <span style={{ fontWeight: 'bold' }}>OpenAI</span> LLM is supported. Select the credential
-                                                to use.
+                                                executes the selected Chatflow, evaluating the results with the
+                                                <span style={{ fontStyle: 'italic' }}> output</span> column by invoking an LLM. Currently,
+                                                only <span style={{ fontWeight: 'bold' }}>OpenAI</span> LLM is supported.
+                                                <br />
+                                                Select the credential to use.
                                             </Typography>
                                             <Box>
                                                 <CredentialInputHandler
@@ -257,7 +285,9 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
                                                 />
                                             </Box>
                                             <Chip variant='outlined' color='primary' style={{ margin: 5 }} label={'latency'} />{' '}
+                                            <Chip variant='outlined' color='primary' label={'token count'} />{' '}
                                             <Chip variant='outlined' color='primary' label={'cost'} />{' '}
+                                            <Chip variant='outlined' color='primary' label={'BERT score'} />{' '}
                                             <Chip variant='outlined' color='primary' label={'correctness'} />{' '}
                                             <Chip variant='outlined' color='primary' label={'relevancy'} />
                                         </TableCell>

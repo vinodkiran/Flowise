@@ -12,6 +12,7 @@ import OpenAI from 'openai'
 import { Between, FindOptionsWhere, LessThanOrEqual, MoreThanOrEqual } from 'typeorm'
 import {
     chatType,
+    EvaluationStatus,
     IChatFlow,
     IChatMessage,
     ICredentialReturnResponse,
@@ -77,6 +78,8 @@ import { Telemetry } from './utils/telemetry'
 import { Variable } from './database/entities/Variable'
 import { Dataset } from './database/entities/Dataset'
 import { DatasetRow } from './database/entities/DatasetRow'
+import { Evaluation } from './database/entities/Evaluation'
+import { EvaluationRun } from './database/entities/EvaluationRun'
 
 export class App {
     app: express.Application
@@ -1573,26 +1576,90 @@ export class App {
 
         // Create new evaluation
         this.app.post('/api/v1/evaluation', async (req: Request, res: Response) => {
-            const body = req.body
             const port = parseInt(process.env.PORT || '', 10) || 3000
+
+            const body = req.body
+            const newEval = new Evaluation()
+            Object.assign(newEval, body)
+            newEval.status = EvaluationStatus.PENDING
+
+            const row = this.AppDataSource.getRepository(Evaluation).create(newEval)
+            const results = await this.AppDataSource.getRepository(Evaluation).save(row)
 
             //save the evaluation with status as pending
             if (body.evaluationType === 'simple') {
                 const dataset = await this.AppDataSource.getRepository(Dataset).findOneBy({
                     id: body.datasetId
                 })
+
+                const items = await getDataSource()
+                    .getRepository(DatasetRow)
+                    .find({
+                        where: { datasetId: req.params.id }
+                    })
+                ;(dataset as any).rows = items
                 const data = {
                     chatflowId: body.chatflowId,
                     dataset: dataset,
-                    evaluationType: body.evaluationType
+                    evaluationType: body.evaluationType,
+                    evaluationId: row.id
                 }
                 const newEval = new EvaluationRunner(port)
                 newEval.runSimpleEvaluation(data).then((result: any) => {
+                    let totalTime = 0
+                    result.map(async (res: any) => {
+                        totalTime += parseFloat(res.latency)
+                        const newRun = new EvaluationRun()
+                        Object.assign(newRun, res)
+
+                        const row = this.AppDataSource.getRepository(EvaluationRun).create(newRun)
+                        await this.AppDataSource.getRepository(EvaluationRun).save(row)
+                    })
                     //update the evaluation with status as completed
+                    this.AppDataSource.getRepository(Evaluation)
+                        .findOneBy({ id: results.id })
+                        .then((evaluation: any) => {
+                            evaluation.status = EvaluationStatus.COMPLETED
+                            evaluation.average_metrics = JSON.stringify({
+                                averageLatency: totalTime / result.length,
+                                totalRuns: result.length
+                            })
+                            this.AppDataSource.getRepository(Evaluation).save(evaluation)
+                        })
                 })
             }
-            return res.json({})
+            const evaluations = await this.AppDataSource.getRepository(Evaluation).find()
+            return res.json(evaluations)
         })
+
+        this.app.get('/api/v1/evaluations', async (req: Request, res: Response) => {
+            const results = await this.AppDataSource.getRepository(Evaluation).find()
+            return res.json(results)
+        })
+
+        // Delete dataset row via id
+        this.app.delete('/api/v1/evaluations/:id', async (req: Request, res: Response) => {
+            await this.AppDataSource.getRepository(Evaluation).delete({ id: req.params.id })
+            await this.AppDataSource.getRepository(EvaluationRun).delete({ evaluationId: req.params.id })
+            const results = await this.AppDataSource.getRepository(Evaluation).find()
+            return res.json(results)
+        })
+
+        this.app.get('/api/v1/evaluations/:id', async (req: Request, res: Response) => {
+            const evaluation = await this.AppDataSource.getRepository(Evaluation).findOneBy({
+                id: req.params.id
+            })
+            const items = await getDataSource()
+                .getRepository(EvaluationRun)
+                .find({
+                    where: { evaluationId: req.params.id }
+                })
+            return res.json({
+                ...evaluation,
+                rows: items
+            })
+        })
+
         // ----------------------------------------
         // Serve UI static
         // ----------------------------------------
