@@ -58,7 +58,15 @@ import { Tool } from './database/entities/Tool'
 import { Assistant } from './database/entities/Assistant'
 import { ChatflowPool } from './ChatflowPool'
 import { CachePool } from './CachePool'
-import { handleEscapeCharacters, ICommonObject, IMessage, INodeOptionsValue, webCrawl, xmlScrape } from 'flowise-components'
+import {
+    handleEscapeCharacters,
+    EvaluationRunner,
+    ICommonObject,
+    IMessage,
+    INodeOptionsValue,
+    webCrawl,
+    xmlScrape
+} from 'flowise-components'
 import { createRateLimiter, getRateLimiter, initializeRateLimiter } from './utils/rateLimit'
 import { addAPIKey, compareKeys, deleteAPIKey, getApiKey, getAPIKeys, updateAPIKey } from './utils/apiKey'
 import { getAllowedIframeOrigins, getCorsOptions, sanitizeMiddleware } from './utils/XSS'
@@ -1566,6 +1574,23 @@ export class App {
         // Create new evaluation
         this.app.post('/api/v1/evaluation', async (req: Request, res: Response) => {
             const body = req.body
+            const port = parseInt(process.env.PORT || '', 10) || 3000
+
+            //save the evaluation with status as pending
+            if (body.evaluationType === 'simple') {
+                const dataset = await this.AppDataSource.getRepository(Dataset).findOneBy({
+                    id: body.datasetId
+                })
+                const data = {
+                    chatflowId: body.chatflowId,
+                    dataset: dataset,
+                    evaluationType: body.evaluationType
+                }
+                const newEval = new EvaluationRunner(port)
+                newEval.runSimpleEvaluation(data).then((result: any) => {
+                    //update the evaluation with status as completed
+                })
+            }
             return res.json({})
         })
         // ----------------------------------------

@@ -44,7 +44,15 @@ const EvalsEvaluation = () => {
         setChatflow(evaluationData.chatflow)
         setDataset(evaluationData.dataset)
         setEvaluationType(evaluationData.evaluationType)
-        getDatasetRows.request(evaluationData.dataset)
+        //getDatasetRows.request(evaluationData.dataset)
+        setLoading(true)
+        const saveEvaluationData = {
+            chatflowId: chatflow,
+            datasetId: dataset,
+            evaluationType: evaluationType
+        }
+        console.log(saveEvaluationData)
+        setLoading(false)
     }
 
     const createEvaluation = () => {
@@ -58,19 +66,19 @@ const EvalsEvaluation = () => {
         setShowNewEvaluationDialog(true)
     }
 
-    useEffect(() => {
-        if (getDatasetRows.data) {
-            evaluate()
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [getDatasetRows.data])
+    // useEffect(() => {
+    //     if (getDatasetRows.data) {
+    //         evaluate()
+    //     }
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, [getDatasetRows.data])
 
     const evaluate = async () => {
         setLoading(true)
         let responseData = await fetchPredictions(getDatasetRows.data.rows)
         const saveEvaluationData = {
-            chatflow: chatflow,
-            dataset: dataset,
+            chatflowId: chatflow,
+            datasetId: dataset,
             evaluationType: evaluationType,
             rows: responseData.map((row) => {
                 return {
