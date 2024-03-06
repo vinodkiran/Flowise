@@ -9,7 +9,6 @@ import {
     TextField,
     InputAdornment,
     ButtonGroup,
-    ToggleButton,
     TableContainer,
     Paper,
     Table,
@@ -24,7 +23,6 @@ import { useTheme } from '@mui/material/styles'
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard'
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import { StyledButton } from '../../ui-component/button/StyledButton'
 import * as React from 'react'
 
@@ -40,7 +38,7 @@ import moment from 'moment/moment'
 
 // icons
 import VariablesEmptySVG from 'assets/images/variables_empty.svg'
-import { IconTrash, IconEdit, IconPlus, IconSearch, IconTable, IconLayoutGrid, IconList, IconX } from '@tabler/icons'
+import { IconTrash, IconEdit, IconPlus, IconSearch, IconTable, IconX } from '@tabler/icons'
 import ConfirmDialog from '../../ui-component/dialog/ConfirmDialog'
 import AddEditDatasetDialog from './AddEditDatasetDialog'
 import { useNavigate } from 'react-router-dom'

@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react'
 
 // material-ui
-import { Box, Button, ButtonGroup, IconButton, Paper, Table, TableBody, TableContainer, TableHead, TableRow, Toolbar } from '@mui/material'
+import {
+    Box,
+    Button,
+    ButtonGroup,
+    Chip,
+    IconButton,
+    Paper,
+    Table,
+    TableBody,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Toolbar
+} from '@mui/material'
 
 // API
 import evaluationApi from 'api/evaluation'
@@ -11,7 +24,7 @@ import TableCell from '@mui/material/TableCell'
 import MainCard from '../../ui-component/cards/MainCard'
 import { useTheme } from '@mui/material/styles'
 import { useSelector } from 'react-redux'
-import { IconPlus, IconRefresh, IconTrash, IconTable } from '@tabler/icons'
+import { IconPlus, IconRefresh, IconTrash, IconTable, IconX } from '@tabler/icons'
 import { StyledButton } from '../../ui-component/button/StyledButton'
 import CreateEvaluationDialog from './CreateEvaluationDialog'
 import { BackdropLoader } from 'ui-component/loading/BackdropLoader'
@@ -27,7 +40,6 @@ const EvalsEvaluation = () => {
 
     const createNewEvaluation = useApi(evaluationApi.createEvaluation)
     const getAllEvaluations = useApi(evaluationApi.getAllEvaluations)
-    const deleteEvaluation = useApi(evaluationApi.deleteEvaluation)
     const [showNewEvaluationDialog, setShowNewEvaluationDialog] = useState(false)
     const [dialogProps, setDialogProps] = useState({})
     const [rows, setRows] = useState([])
@@ -80,6 +92,56 @@ const EvalsEvaluation = () => {
         navigate(`/evaluation_rows/${item.id}`)
     }
 
+    const goToDataset = (id) => {
+        navigate(`/dataset_rows/${id}`)
+    }
+
+    const deleteEvaluation = async (variable) => {
+        const confirmPayload = {
+            title: `Delete`,
+            description: `Delete Evaluation ${variable.name}?`,
+            confirmButtonName: 'Delete',
+            cancelButtonName: 'Cancel'
+        }
+        const isConfirmed = await confirm(confirmPayload)
+
+        if (isConfirmed) {
+            try {
+                const deleteResp = await evaluationApi.deleteEvaluation(variable.id)
+                if (deleteResp.data) {
+                    enqueueSnackbar({
+                        message: 'Evaluation deleted',
+                        options: {
+                            key: new Date().getTime() + Math.random(),
+                            variant: 'success',
+                            action: (key) => (
+                                <Button style={{ color: 'white' }} onClick={() => closeSnackbar(key)}>
+                                    <IconX />
+                                </Button>
+                            )
+                        }
+                    })
+                    onConfirm()
+                }
+            } catch (error) {
+                const errorData = error.response?.data || `${error.response?.status}: ${error.response?.statusText}`
+                enqueueSnackbar({
+                    message: `Failed to delete Variable: ${errorData}`,
+                    options: {
+                        key: new Date().getTime() + Math.random(),
+                        variant: 'error',
+                        persist: true,
+                        action: (key) => (
+                            <Button style={{ color: 'white' }} onClick={() => closeSnackbar(key)}>
+                                <IconX />
+                            </Button>
+                        )
+                    }
+                })
+            }
+        }
+    }
+
     const createEvaluation = () => {
         const dialogProp = {
             type: 'ADD',
@@ -91,16 +153,8 @@ const EvalsEvaluation = () => {
         setShowNewEvaluationDialog(true)
     }
 
-    const showMetrics = (metrics) => {
-        if (!metrics) {
-            return ''
-        }
-        let displayMetrics = ''
-        const metricsObj = JSON.parse(metrics)
-        Object.getOwnPropertyNames(metricsObj).forEach((key) => {
-            displayMetrics += "<Chip variant='outlined' color='primary' label=" + metricsObj[key] + '/> '
-        })
-        return displayMetrics
+    const goToCanvas = (id) => {
+        navigate(`/canvas/${id}`)
     }
 
     return (
@@ -150,8 +204,8 @@ const EvalsEvaluation = () => {
                                 <TableRow>
                                     <TableCell width='10%'>Status</TableCell>
                                     <TableCell width='15%'>Date</TableCell>
-                                    <TableCell width='10%'>Name</TableCell>
                                     <TableCell width='10%'>Type</TableCell>
+                                    <TableCell width='10%'>Name</TableCell>
                                     <TableCell width='15%'>Chatflow</TableCell>
                                     <TableCell width='15%'>Dataset</TableCell>
                                     <TableCell width='15%'>Avg. Metrics</TableCell>
@@ -173,22 +227,46 @@ const EvalsEvaluation = () => {
                                         <TableRow key={index} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                             <TableCell>{item.status === 'pending' ? 'Pending' : 'Complete'}</TableCell>
                                             <TableCell>{moment(item.runDate).format('DD-MMM-YY HH:MM:SS')}</TableCell>
+                                            <TableCell>{item.evaluationType?.toUpperCase()}</TableCell>
                                             <TableCell>
                                                 <Button onClick={() => goToRows(item)} sx={{ textAlign: 'left' }}>
                                                     {item.name}
                                                 </Button>
                                             </TableCell>
-                                            <TableCell>{item.evaluationType}</TableCell>
-                                            <TableCell>{item.chatflowName}</TableCell>
-                                            <TableCell>{item.datasetName}</TableCell>
                                             <TableCell>
-                                                {item.average_metrics?.totalRuns && (
-                                                    <div> Num of Runs: {item?.average_metrics?.totalRuns}</div>
-                                                )}
+                                                <Button onClick={() => goToCanvas(item.chatflowId)} sx={{ textAlign: 'left' }}>
+                                                    {item.chatflowName}
+                                                </Button>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Button onClick={() => goToDataset(item.datasetId)} sx={{ textAlign: 'left' }}>
+                                                    {item.datasetName}
+                                                </Button>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    style={{ marginBottom: '4px' }}
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='info'
+                                                    label={
+                                                        item.average_metrics?.totalRuns
+                                                            ? 'Items: ' + item.average_metrics?.totalRuns
+                                                            : 'Items: N/A'
+                                                    }
+                                                />{' '}
                                                 {item.average_metrics?.averageCost && <div> Avg Cost: 0</div>}
-                                                {item.average_metrics?.averageLatency && (
-                                                    <div> Avg Latency: {item?.average_metrics?.averageLatency}</div>
-                                                )}
+                                                <Chip
+                                                    style={{ marginBottom: '4px' }}
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='info'
+                                                    label={
+                                                        item.average_metrics?.averageLatency
+                                                            ? 'Avg Latency: ' + item.average_metrics?.averageLatency
+                                                            : 'Avg Latency: N/A'
+                                                    }
+                                                />{' '}
                                             </TableCell>
                                             <TableCell>
                                                 <IconButton title='Run Details' color='primary' onClick={() => goToRows(item)}>

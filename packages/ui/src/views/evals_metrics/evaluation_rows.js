@@ -6,7 +6,6 @@ import {
     Box,
     Toolbar,
     TableContainer,
-    Paper,
     Table,
     TableHead,
     TableRow,
@@ -118,7 +117,7 @@ const EvalEvaluationRows = () => {
                             <TableHead>
                                 <TableRow>
                                     <TableCell width='20%'> Evaluation Type</TableCell>
-                                    <TableCell width='30%'>{evaluation?.evaluationType}</TableCell>
+                                    <TableCell width='30%'>{evaluation?.evaluationType?.toUpperCase()}</TableCell>
                                     <TableCell width='20%'> Run Date / Time</TableCell>
                                     <TableCell width='30%'>{moment(evaluation?.runDate).format('DD-MMM-YY HH:MM:SS')}</TableCell>
                                 </TableRow>
@@ -147,45 +146,105 @@ const EvalEvaluationRows = () => {
                                 <TableCell>Actual Output</TableCell>
                                 <TableCell>Anticipated Output</TableCell>
                                 <TableCell>Cost</TableCell>
-                                <TableCell>Latency</TableCell>
-                                <TableCell>Tokens</TableCell>
-                                <TableCell>BERT Familiarity</TableCell>
+                                <TableCell>BERT Score</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {rows.length === 0 && (
                                 <TableRow sx={{ border: 1 }}>
-                                    <TableCell colSpan='4'>
+                                    <TableCell colSpan='5'>
                                         <div>No Items Yet</div>
                                     </TableCell>
                                 </TableRow>
                             )}
                             {rows.length > 0 &&
                                 rows.map((item, index) => (
-                                    <TableRow key={index} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                        <TableCell>{item.input}</TableCell>
-                                        <TableCell>{item.actualOutput}</TableCell>
-                                        <TableCell>{item.expectedOutput}</TableCell>
-                                        <TableCell>0</TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                variant='outlined'
-                                                size='small'
-                                                color='primary'
-                                                label={item.metrics?.latency ? item.metrics?.latency : 'N/A'}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            Total: {item.metrics?.totalTokens ? item.metrics?.totalTokens : 'N/A'}
-                                            <br />
-                                            Prompt: {item.metrics?.promptTokens ? item.metrics?.promptTokens : 'N/A'}
-                                            <br />
-                                            Input: {item.metrics?.inputTokens ? item.metrics?.inputTokens : 'N/A'}
-                                            <br />
-                                            Response: {item.metrics?.responseTokens ? item.metrics?.responseTokens : 'N/A'}
-                                        </TableCell>
-                                        <TableCell>{item.metrics?.bert_precision ? item.metrics?.bert_precision : 'N/A'}</TableCell>
-                                    </TableRow>
+                                    <>
+                                        <TableRow key={index} sx={{ border: 0 }}>
+                                            <TableCell sx={{ border: 0 }}>{item.input}</TableCell>
+                                            <TableCell sx={{ border: 0 }}>{item.actualOutput}</TableCell>
+                                            <TableCell sx={{ border: 0 }}>{item.expectedOutput}</TableCell>
+                                            <TableCell sx={{ border: 0 }} width='10%'>
+                                                0
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{ border: 0 }}
+                                                width='10%'
+                                                style={{ whiteSpace: 'normal', wordWrap: 'break-word', maxWidth: '10%' }}
+                                            >
+                                                <Chip
+                                                    style={{ marginBottom: '4px' }}
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='info'
+                                                    label={
+                                                        item.metrics?.bert_precision
+                                                            ? 'Precision: ' + item.metrics?.bert_precision
+                                                            : 'Precision: N/A'
+                                                    }
+                                                />{' '}
+                                                <Chip
+                                                    style={{ marginBottom: '4px' }}
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='info'
+                                                    label={
+                                                        item.metrics?.bert_recall ? 'Recall: ' + item.metrics?.bert_recall : 'Recall: N/A'
+                                                    }
+                                                />{' '}
+                                                <Chip
+                                                    style={{ marginBottom: '4px' }}
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='info'
+                                                    label={item.metrics?.bert_f1 ? 'F1: ' + item.metrics?.bert_f1 : 'F1: N/A'}
+                                                />{' '}
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow key={index} sx={{ '&:last-child td, &:last-child tr': { border: 0 } }}>
+                                            <TableCell
+                                                colspan='5'
+                                                style={{ whiteSpace: 'normal', wordWrap: 'break-word', maxWidth: '10%' }}
+                                            >
+                                                <Chip
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='primary'
+                                                    label={item.metrics?.latency ? 'Latency: ' + item.metrics?.latency : 'Latency: N/A'}
+                                                />{' '}
+                                                <Chip
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='secondary'
+                                                    label={item.metrics?.totalTokens ? 'Total: ' + item.metrics?.totalTokens : 'Total: N/A'}
+                                                />{' '}
+                                                <Chip
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='secondary'
+                                                    label={
+                                                        item.metrics?.promptTokens ? 'Prompt: ' + item.metrics?.promptTokens : 'Prompt: N/A'
+                                                    }
+                                                />{' '}
+                                                <Chip
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='secondary'
+                                                    label={item.metrics?.inputTokens ? 'Input: ' + item.metrics?.inputTokens : 'Input: N/A'}
+                                                />{' '}
+                                                <Chip
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='secondary'
+                                                    label={
+                                                        item.metrics?.responseTokens
+                                                            ? 'Response: ' + item.metrics?.responseTokens
+                                                            : 'Response: N/A'
+                                                    }
+                                                />{' '}
+                                            </TableCell>
+                                        </TableRow>
+                                    </>
                                 ))}
                         </TableBody>
                     </Table>
