@@ -1,5 +1,7 @@
 {
     "description": "Use Anthropic Claude with 200k context window to ingest whole document for QnA",
+    "categories": "Buffer Memory,Prompt Template,Conversation Chain,ChatAnthropic,Langchain",
+    "framework": "Langchain",
     "nodes": [
         {
             "width": 300,
@@ -177,6 +179,16 @@
                         "name": "modelName",
                         "type": "options",
                         "options": [
+                            {
+                                "label": "claude-3-opus",
+                                "name": "claude-3-opus-20240229",
+                                "description": "Most powerful model for highly complex tasks"
+                            },
+                            {
+                                "label": "claude-3-sonnet",
+                                "name": "claude-3-sonnet-20240229",
+                                "description": "Ideal balance of intelligence and speed for enterprise workloads"
+                            },
                             {
                                 "label": "claude-2",
                                 "name": "claude-2",
@@ -439,10 +451,10 @@
                         "type": "options",
                         "options": [
                             {
-                                "id": "plainText_0-output-document-Document",
+                                "id": "plainText_0-output-document-Document|json",
                                 "name": "document",
                                 "label": "Document",
-                                "type": "Document"
+                                "type": "Document | json"
                             },
                             {
                                 "id": "plainText_0-output-text-string|json",

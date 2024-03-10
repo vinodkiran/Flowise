@@ -104,9 +104,11 @@ const NodeInputHandler = ({
         }
     }
 
-    const onManageLinksDialogClicked = (url, selectedLinks) => {
+    const onManageLinksDialogClicked = (url, selectedLinks, relativeLinksMethod, limit) => {
         const dialogProps = {
             url,
+            relativeLinksMethod,
+            limit,
             selectedLinks,
             confirmButtonName: 'Save',
             cancelButtonName: 'Cancel'
@@ -491,7 +493,9 @@ const NodeInputHandler = ({
                                         onClick={() =>
                                             onManageLinksDialogClicked(
                                                 data.inputs[inputParam.name] ?? inputParam.default ?? '',
-                                                data.inputs.selectedLinks
+                                                data.inputs.selectedLinks,
+                                                data.inputs['relativeLinksMethod'] ?? 'webCrawl',
+                                                parseInt(data.inputs['limit']) ?? 0
                                             )
                                         }
                                     >
