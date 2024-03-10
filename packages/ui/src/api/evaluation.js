@@ -5,8 +5,8 @@ const getEvaluation = (id) => client.get(`/evaluations/${id}`)
 
 //evaluation
 const createEvaluation = (body) => client.post(`/evaluation`, body)
-// const updateDataset = (id, body) => client.put(`/datasets/${id}`, body)
 const deleteEvaluation = (id) => client.delete(`/evaluations/${id}`)
+// const updateDataset = (id, body) => client.put(`/datasets/${id}`, body)
 //
 // //rows
 // const createDatasetRow = (body) => client.post(`/datasetrow`, body)

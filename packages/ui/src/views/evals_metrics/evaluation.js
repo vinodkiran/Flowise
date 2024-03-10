@@ -19,24 +19,32 @@ import {
 // API
 import evaluationApi from 'api/evaluation'
 
+// Hooks
+import useApi from '../../hooks/useApi'
+import { useNavigate } from 'react-router-dom'
+import useConfirm from '../../hooks/useConfirm'
+import { useTheme } from '@mui/material/styles'
+import { useDispatch, useSelector } from 'react-redux'
+import useNotifier from '../../utils/useNotifier'
+
 // const
 import TableCell from '@mui/material/TableCell'
 import MainCard from '../../ui-component/cards/MainCard'
-import { useTheme } from '@mui/material/styles'
-import { useSelector } from 'react-redux'
 import { IconPlus, IconRefresh, IconTrash, IconTable, IconX } from '@tabler/icons'
 import { StyledButton } from '../../ui-component/button/StyledButton'
-import CreateEvaluationDialog from './CreateEvaluationDialog'
 import { BackdropLoader } from 'ui-component/loading/BackdropLoader'
-import useApi from '../../hooks/useApi'
 import moment from 'moment/moment'
-import { useNavigate } from 'react-router-dom'
+import ConfirmDialog from '../../ui-component/dialog/ConfirmDialog'
+import CreateEvaluationDialog from './CreateEvaluationDialog'
+import { closeSnackbar as closeSnackbarAction, enqueueSnackbar as enqueueSnackbarAction } from '../../store/actions'
 
 const EvalsEvaluation = () => {
     const navigate = useNavigate()
 
     const theme = useTheme()
     const customization = useSelector((state) => state.customization)
+    const enqueueSnackbar = (...args) => dispatch(enqueueSnackbarAction(...args))
+    const closeSnackbar = (...args) => dispatch(closeSnackbarAction(...args))
 
     const createNewEvaluation = useApi(evaluationApi.createEvaluation)
     const getAllEvaluations = useApi(evaluationApi.getAllEvaluations)
@@ -44,6 +52,10 @@ const EvalsEvaluation = () => {
     const [dialogProps, setDialogProps] = useState({})
     const [rows, setRows] = useState([])
     const [loading, setLoading] = useState(false)
+
+    const { confirm } = useConfirm()
+    const dispatch = useDispatch()
+    useNotifier()
 
     useEffect(() => {
         getAllEvaluations.request()
@@ -96,10 +108,10 @@ const EvalsEvaluation = () => {
         navigate(`/dataset_rows/${id}`)
     }
 
-    const deleteEvaluation = async (variable) => {
+    const deleteEvaluation = async (item) => {
         const confirmPayload = {
             title: `Delete`,
-            description: `Delete Evaluation ${variable.name}?`,
+            description: `Delete Evaluation ${item.name}? This will delete all the evaluation rows associated with this evaluation as well.`,
             confirmButtonName: 'Delete',
             cancelButtonName: 'Cancel'
         }
@@ -107,10 +119,10 @@ const EvalsEvaluation = () => {
 
         if (isConfirmed) {
             try {
-                const deleteResp = await evaluationApi.deleteEvaluation(variable.id)
+                const deleteResp = await evaluationApi.deleteEvaluation(item.id)
                 if (deleteResp.data) {
                     enqueueSnackbar({
-                        message: 'Evaluation deleted',
+                        message: "Evaluation '" + item.name + "' deleted.",
                         options: {
                             key: new Date().getTime() + Math.random(),
                             variant: 'success',
@@ -121,12 +133,12 @@ const EvalsEvaluation = () => {
                             )
                         }
                     })
-                    onConfirm()
+                    onRefresh()
                 }
             } catch (error) {
                 const errorData = error.response?.data || `${error.response?.status}: ${error.response?.statusText}`
                 enqueueSnackbar({
-                    message: `Failed to delete Variable: ${errorData}`,
+                    message: `Failed to delete Evaluation: ${errorData}.`,
                     options: {
                         key: new Date().getTime() + Math.random(),
                         variant: 'error',
@@ -202,10 +214,10 @@ const EvalsEvaluation = () => {
                         <Table aria-label='simple table'>
                             <TableHead>
                                 <TableRow>
+                                    <TableCell width='10%'>Name</TableCell>
                                     <TableCell width='10%'>Status</TableCell>
                                     <TableCell width='15%'>Date</TableCell>
                                     <TableCell width='10%'>Type</TableCell>
-                                    <TableCell width='10%'>Name</TableCell>
                                     <TableCell width='15%'>Chatflow</TableCell>
                                     <TableCell width='15%'>Dataset</TableCell>
                                     <TableCell width='15%'>Avg. Metrics</TableCell>
@@ -225,14 +237,14 @@ const EvalsEvaluation = () => {
                                 {rows.length > 0 &&
                                     rows.map((item, index) => (
                                         <TableRow key={index} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                            <TableCell>{item.status === 'pending' ? 'Pending' : 'Complete'}</TableCell>
-                                            <TableCell>{moment(item.runDate).format('DD-MMM-YY HH:MM:SS')}</TableCell>
-                                            <TableCell>{item.evaluationType?.toUpperCase()}</TableCell>
                                             <TableCell>
                                                 <Button onClick={() => goToRows(item)} sx={{ textAlign: 'left' }}>
                                                     {item.name}
                                                 </Button>
                                             </TableCell>
+                                            <TableCell>{item.status === 'pending' ? 'Pending' : 'Complete'}</TableCell>
+                                            <TableCell>{moment(item.runDate).format('DD-MMM-YY HH:MM:SS')}</TableCell>
+                                            <TableCell>{item.evaluationType?.toUpperCase()}</TableCell>
                                             <TableCell>
                                                 <Button onClick={() => goToCanvas(item.chatflowId)} sx={{ textAlign: 'left' }}>
                                                     {item.chatflowName}
@@ -269,12 +281,14 @@ const EvalsEvaluation = () => {
                                                 />{' '}
                                             </TableCell>
                                             <TableCell>
-                                                <IconButton title='Run Details' color='primary' onClick={() => goToRows(item)}>
-                                                    <IconTable />
-                                                </IconButton>
+                                                {item.evaluationType !== 'pending' && (
+                                                    <IconButton title='Run Details' color='primary' onClick={() => goToRows(item)}>
+                                                        <IconTable />
+                                                    </IconButton>
+                                                )}{' '}
                                             </TableCell>
                                             <TableCell>
-                                                <IconButton title='Delete' color='error'>
+                                                <IconButton title='Delete' color='error' onClick={() => deleteEvaluation(item)}>
                                                     <IconTrash />
                                                 </IconButton>
                                             </TableCell>
@@ -291,6 +305,7 @@ const EvalsEvaluation = () => {
                 onCancel={() => setShowNewEvaluationDialog(false)}
                 onConfirm={onConfirm}
             ></CreateEvaluationDialog>
+            <ConfirmDialog />
             {loading && <BackdropLoader open={loading} />}
         </div>
     )

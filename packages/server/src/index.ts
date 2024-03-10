@@ -60,8 +60,8 @@ import { Assistant } from './database/entities/Assistant'
 import { ChatflowPool } from './ChatflowPool'
 import { CachePool } from './CachePool'
 import {
-    handleEscapeCharacters,
     EvaluationRunner,
+    handleEscapeCharacters,
     ICommonObject,
     IMessage,
     INodeOptionsValue,
@@ -1586,48 +1586,91 @@ export class App {
             const row = this.AppDataSource.getRepository(Evaluation).create(newEval)
             const results = await this.AppDataSource.getRepository(Evaluation).save(row)
 
+            const dataset = await this.AppDataSource.getRepository(Dataset).findOneBy({
+                id: body.datasetId
+            })
+
+            const items = await getDataSource()
+                .getRepository(DatasetRow)
+                .find({
+                    where: { datasetId: req.params.id }
+                })
+            ;(dataset as any).rows = items
+            const data = {
+                chatflowId: body.chatflowId,
+                dataset: dataset,
+                evaluationType: body.evaluationType,
+                evaluationId: row.id,
+                credentialId: body.credentialId
+            }
+
             //save the evaluation with status as pending
-            if (body.evaluationType === 'simple') {
-                const dataset = await this.AppDataSource.getRepository(Dataset).findOneBy({
-                    id: body.datasetId
+            // if (body.evaluationType === 'simple') {
+            const evalRunner = new EvaluationRunner(port)
+
+            console.log('body.evaluationType === ' + body.evaluationType)
+            if (body.evaluationType != 'simple') {
+                const credential = await this.AppDataSource.getRepository(Credential).findOneBy({
+                    id: body.credentialId
                 })
 
-                const items = await getDataSource()
-                    .getRepository(DatasetRow)
-                    .find({
-                        where: { datasetId: req.params.id }
-                    })
-                ;(dataset as any).rows = items
-                const data = {
-                    chatflowId: body.chatflowId,
-                    dataset: dataset,
-                    evaluationType: body.evaluationType,
-                    evaluationId: row.id
-                }
-                const newEval = new EvaluationRunner(port)
-                newEval.runSimpleEvaluation(data).then((result: any) => {
-                    let totalTime = 0
-                    result.map(async (res: any) => {
-                        totalTime += parseFloat(res.latency)
-                        const newRun = new EvaluationRun()
-                        Object.assign(newRun, res)
+                if (!credential) return res.status(404).send(`Credential ${req.params.id} not found`)
 
+                // Decrypt credentialData
+                // @ts-ignore
+                data.decryptedCredentialData = await decryptCredentialData(credential.encryptedData)
+            }
+            evalRunner.runEvaluation(body.evaluationType, data).then((result: any) => {
+                let totalTime = 0
+                result.map(async (res: any) => {
+                    totalTime += parseFloat(res.latency)
+                    const newRun = new EvaluationRun()
+                    const metrics = EvaluationRunner.getAndDeleteMetrics(res.uuid)
+                    const metricsObjFromRun = JSON.parse(res.metrics)
+                    if (metrics) {
+                        metrics.map((metric: any) => {
+                            const json = typeof metric === 'object' ? metric : JSON.parse(metric)
+                            Object.getOwnPropertyNames(json).map((key) => {
+                                metricsObjFromRun[key] = json[key]
+                            })
+                        })
+                    }
+                    Object.assign(newRun, res)
+                    newRun.metrics = JSON.stringify(metricsObjFromRun)
+                    if (body.evaluationType === 'llm') {
+                        // @ts-ignore
+                        res.decryptedCredentialData = data.decryptedCredentialData
+                        evalRunner.evaluateAnswer(res).then(async (result: any) => {
+                            newRun.reasoning = result.reasoning
+                            newRun.score = result.score
+                            console.log('newRun.reasoning ' + newRun.reasoning)
+                            console.log('newRun.score ' + newRun.score)
+                            const row = this.AppDataSource.getRepository(EvaluationRun).create(newRun)
+                            await this.AppDataSource.getRepository(EvaluationRun).save(row)
+                        })
+                    } else {
                         const row = this.AppDataSource.getRepository(EvaluationRun).create(newRun)
                         await this.AppDataSource.getRepository(EvaluationRun).save(row)
-                    })
-                    //update the evaluation with status as completed
-                    this.AppDataSource.getRepository(Evaluation)
-                        .findOneBy({ id: results.id })
-                        .then((evaluation: any) => {
-                            evaluation.status = EvaluationStatus.COMPLETED
-                            evaluation.average_metrics = JSON.stringify({
-                                averageLatency: totalTime / result.length,
-                                totalRuns: result.length
-                            })
-                            this.AppDataSource.getRepository(Evaluation).save(evaluation)
-                        })
+                    }
                 })
-            }
+                //update the evaluation with status as completed
+                this.AppDataSource.getRepository(Evaluation)
+                    .findOneBy({ id: results.id })
+                    .then((evaluation: any) => {
+                        evaluation.status = EvaluationStatus.COMPLETED
+                        evaluation.average_metrics = JSON.stringify({
+                            averageLatency: (totalTime / result.length).toFixed(3),
+                            totalRuns: result.length
+                        })
+                        this.AppDataSource.getRepository(Evaluation).save(evaluation)
+                    })
+            })
+            // } else if (body.evaluationType === 'llm') {
+            //     const newEval = new EvaluationRunner(port)
+            //     newEval.runLLMEvaluation(data).then((result: any) => {
+            //
+            //     })
+            // }
             const evaluations = await this.AppDataSource.getRepository(Evaluation).find()
             return res.json(evaluations)
         })
@@ -1637,7 +1680,7 @@ export class App {
             return res.json(results)
         })
 
-        // Delete dataset row via id
+        // Delete evaluation and all rows via id
         this.app.delete('/api/v1/evaluations/:id', async (req: Request, res: Response) => {
             await this.AppDataSource.getRepository(Evaluation).delete({ id: req.params.id })
             await this.AppDataSource.getRepository(EvaluationRun).delete({ evaluationId: req.params.id })
@@ -1933,13 +1976,17 @@ export class App {
      * @param {Response} res
      * @param {Server} socketIO
      * @param {boolean} isInternal
-     * @param {boolean} isUpsert
      */
     async buildChatflow(req: Request, res: Response, socketIO?: Server, isInternal: boolean = false) {
         try {
             const chatflowid = req.params.id
             let incomingInput: IncomingInput = req.body
-
+            const isEvaluation: boolean = req.headers['X-Flowise-Evaluation'] || req.body.evaluation
+            let evaluationRunId = ''
+            if (isEvaluation) {
+                evaluationRunId = req.body.evaluationRunId
+            }
+            console.log("req.headers['X-Request-ID'] == " + req.headers['X-Request-ID'])
             let nodeToExecuteData: INodeData
 
             const chatflow = await this.AppDataSource.getRepository(ChatFlow).findOneBy({
@@ -1947,6 +1994,15 @@ export class App {
             })
             if (!chatflow) return res.status(404).send(`Chatflow ${chatflowid} not found`)
 
+            if (isEvaluation) {
+                const newEval = {
+                    evaluation: {
+                        status: true,
+                        evaluationRunId: evaluationRunId
+                    }
+                }
+                chatflow.analytic = JSON.stringify(newEval)
+            }
             const chatId = incomingInput.chatId ?? incomingInput.overrideConfig?.sessionId ?? uuidv4()
             const userMessageDateTime = new Date()
 
@@ -2161,7 +2217,8 @@ export class App {
                       databaseEntities,
                       analytic: chatflow.analytic,
                       socketIO,
-                      socketIOClientId: incomingInput.socketIOClientId
+                      socketIOClientId: incomingInput.socketIOClientId,
+                      evaluationRunId: evaluationRunId
                   })
                 : await nodeInstance.run(nodeToExecuteData, incomingInput.question, {
                       chatId,
@@ -2170,7 +2227,8 @@ export class App {
                       logger,
                       appDataSource: this.AppDataSource,
                       databaseEntities,
-                      analytic: chatflow.analytic
+                      analytic: chatflow.analytic,
+                      evaluationRunId: evaluationRunId
                   })
 
             result = typeof result === 'string' ? { text: result } : result
@@ -2190,7 +2248,9 @@ export class App {
                 sessionId,
                 createdDate: userMessageDateTime
             }
-            await this.addChatMessage(userMessage)
+            if (!isEvaluation) {
+                await this.addChatMessage(userMessage)
+            }
 
             let resultText = ''
             if (result.text) resultText = result.text
@@ -2209,17 +2269,22 @@ export class App {
             if (result?.sourceDocuments) apiMessage.sourceDocuments = JSON.stringify(result.sourceDocuments)
             if (result?.usedTools) apiMessage.usedTools = JSON.stringify(result.usedTools)
             if (result?.fileAnnotations) apiMessage.fileAnnotations = JSON.stringify(result.fileAnnotations)
-            const chatMessage = await this.addChatMessage(apiMessage)
-            result.chatMessageId = chatMessage.id
+            if (!isEvaluation) {
+                const chatMessage = await this.addChatMessage(apiMessage)
+                result.chatMessageId = chatMessage.id
+            }
 
             logger.debug(`[server]: Finished running ${nodeToExecuteData.label} (${nodeToExecuteData.id})`)
-            await this.telemetry.sendTelemetry('prediction_sent', {
-                version: await getAppVersion(),
-                chatlowId: chatflowid,
-                chatId,
-                type: isInternal ? chatType.INTERNAL : chatType.EXTERNAL,
-                flowGraph: getTelemetryFlowObj(nodes, edges)
-            })
+
+            if (!isEvaluation) {
+                await this.telemetry.sendTelemetry('prediction_sent', {
+                    version: await getAppVersion(),
+                    chatlowId: chatflowid,
+                    chatId,
+                    type: isInternal ? chatType.INTERNAL : chatType.EXTERNAL,
+                    flowGraph: getTelemetryFlowObj(nodes, edges)
+                })
+            }
 
             // Prepare response
             result.chatId = chatId

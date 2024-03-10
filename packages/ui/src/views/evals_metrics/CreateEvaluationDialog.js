@@ -16,13 +16,13 @@ import {
     TableContainer,
     Paper,
     Table,
-    TableHead,
     TableRow,
     TableBody,
     FormControlLabel,
     Radio,
     Chip,
-    OutlinedInput
+    OutlinedInput,
+    Grid
 } from '@mui/material'
 
 // Project imports
@@ -76,6 +76,7 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
     const getAllDatasets = useApi(datasetsApi.getAllDatasets)
 
     const [chatflow, setChatflow] = useState('')
+    const [chatflow2, setChatflow2] = useState('')
     const [dataset, setDataset] = useState('')
 
     const [flows, setFlows] = useState([])
@@ -140,7 +141,7 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
     const component = show ? (
         <Dialog
             fullWidth
-            maxWidth='md'
+            maxWidth='lg'
             open={show}
             onClose={onCancel}
             aria-labelledby='alert-dialog-title'
@@ -171,44 +172,44 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
                 </div>
             </DialogTitle>
             <DialogContent>
-                <Box sx={{ flexGrow: 1 }}>
-                    <Stack sx={{ position: 'relative' }} direction='row'>
-                        <Typography variant='overline'>Name</Typography>
-                        <TooltipWithParser style={{ marginLeft: 10 }} title={'Friendly name to tag this run.'} />
-                    </Stack>
-                    <OutlinedInput
-                        id='evaluationName'
-                        type='string'
-                        fullWidth
-                        value={evaluationName}
-                        name='evaluationName'
-                        onChange={(e) => setEvaluationName(e.target.value)}
-                    />
-                </Box>
-                <Box sx={{ flexGrow: 1 }}>
-                    <Stack sx={{ position: 'relative' }} direction='row'>
+                <Grid container spacing='5'>
+                    <Grid item xs={12} sm={12} md={2} lg={2}>
+                        <Stack sx={{ position: 'relative' }} direction='row'>
+                            <Typography variant='overline'>Name</Typography>
+                            <TooltipWithParser style={{ marginLeft: 10 }} title={'Friendly name to tag this run.'} />
+                        </Stack>
+                        <OutlinedInput
+                            id='evaluationName'
+                            type='string'
+                            size='small'
+                            fullWidth
+                            value={evaluationName}
+                            name='evaluationName'
+                            onChange={(e) => setEvaluationName(e.target.value)}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={12} md={5} lg={5}>
                         <Typography variant='overline'>Chatflow to Evaluate</Typography>
-                    </Stack>
-                    <Dropdown
-                        name='chatflow1'
-                        defaultOption='Select Chatflow'
-                        options={flows}
-                        onSelect={(newValue) => setChatflow(newValue)}
-                        value={chatflow}
-                    />
-                </Box>
-                <Box sx={{ flexGrow: 1, mt: 1 }}>
-                    <Stack sx={{ position: 'relative' }} direction='row'>
+                        <Dropdown
+                            name='chatflow1'
+                            defaultOption='Select Chatflow'
+                            options={flows}
+                            onSelect={(newValue) => setChatflow(newValue)}
+                            value={chatflow}
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={12} md={5} lg={5}>
                         <Typography variant='overline'>Dataset to use</Typography>
-                    </Stack>
-                    <Dropdown
-                        name='dataset'
-                        defaultOption='Select Dataset'
-                        options={datasets}
-                        onSelect={(newValue) => setDataset(newValue)}
-                        value={dataset}
-                    />
-                </Box>
+                        <Dropdown
+                            name='dataset'
+                            defaultOption='Select Dataset'
+                            options={datasets}
+                            onSelect={(newValue) => setDataset(newValue)}
+                            value={dataset}
+                        />
+                    </Grid>
+                </Grid>
+
                 <RadioGroup
                     onChange={onEvaluationTypeChange}
                     name='evaluationType'
@@ -216,15 +217,15 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
                     aria-labelledby='eval-optins-radio-buttons-group'
                     defaultValue='simple'
                 >
-                    <Box sx={{ flexGrow: 1, mt: 1 }}>
+                    <Box sx={{ flexGrow: 1, mt: 0 }}>
                         <TableContainer component={Paper}>
                             <Table aria-label='simple table'>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell width={'20%'}>{'Type'}</TableCell>
-                                        <TableCell width={'80%'}>{'Description'}</TableCell>
-                                    </TableRow>
-                                </TableHead>
+                                {/*<TableHead>*/}
+                                {/*    <TableRow>*/}
+                                {/*        <TableCell width={'20%'}>{'Type'}</TableCell>*/}
+                                {/*        <TableCell width={'80%'}>{'Description'}</TableCell>*/}
+                                {/*    </TableRow>*/}
+                                {/*</TableHead>*/}
                                 <TableBody>
                                     <TableRow style={{ verticalAlign: 'top' }}>
                                         <TableCell>
@@ -233,22 +234,12 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
                                         <TableCell>
                                             <Typography variant='h4'>Simple evaluation based on the dataset</Typography>
                                             <Typography variant='body2'>
-                                                <br />
                                                 Uses the <span style={{ fontStyle: 'italic' }}>input</span> column from the dataset and
                                                 executes the selected Chatflow, and compares the results with the output column.
                                             </Typography>
-                                            <Chip color='primary' variant='outlined' label={'latency'}>
-                                                latency
-                                            </Chip>{' '}
-                                            <Chip color='primary' variant='outlined' label={'cost'}>
-                                                cost
-                                            </Chip>{' '}
-                                            <Chip color='primary' variant='outlined' label={'BERT Score'}>
-                                                bert score
-                                            </Chip>{' '}
-                                            <Chip color='primary' variant='outlined' label={'token count'}>
-                                                token count
-                                            </Chip>
+                                            <Chip variant='outlined' color='primary' style={{ margin: 5 }} label={'latency'} />{' '}
+                                            <Chip color='primary' variant='outlined' label={'token count'} />{' '}
+                                            <Chip color='primary' variant='outlined' label={'cost'} />{' '}
                                         </TableCell>
                                     </TableRow>
                                     <TableRow style={{ verticalAlign: 'top' }}>
@@ -258,19 +249,18 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
                                         <TableCell>
                                             <Typography variant='h4'>Evaluation using LLM</Typography>
                                             <Typography variant='body2'>
-                                                <br />
                                                 Uses the <span style={{ fontStyle: 'italic' }}>input</span> column from the dataset and
                                                 executes the selected Chatflow, evaluating the results with the
                                                 <span style={{ fontStyle: 'italic' }}> output</span> column by invoking an LLM. Currently,
                                                 only <span style={{ fontWeight: 'bold' }}>OpenAI</span> LLM is supported.
                                                 <br />
-                                                Select the credential to use.
+                                                <span style={{ fontWeight: 'bold' }}> Select the credential to use.</span>
                                             </Typography>
                                             <Box>
                                                 <CredentialInputHandler
                                                     disabled={evaluationType !== 'llm'}
                                                     size='small'
-                                                    sx={{ flexGrow: 1, marginBottom: 5 }}
+                                                    sx={{ flexGrow: 1, marginBottom: 3 }}
                                                     key={credentialId}
                                                     data={credentialId ? { credential: credentialId } : {}}
                                                     inputParam={{
@@ -287,9 +277,57 @@ const CreateEvaluationDialog = ({ show, dialogProps, onCancel, onConfirm }) => {
                                             <Chip variant='outlined' color='primary' style={{ margin: 5 }} label={'latency'} />{' '}
                                             <Chip variant='outlined' color='primary' label={'token count'} />{' '}
                                             <Chip variant='outlined' color='primary' label={'cost'} />{' '}
-                                            <Chip variant='outlined' color='primary' label={'BERT score'} />{' '}
-                                            <Chip variant='outlined' color='primary' label={'correctness'} />{' '}
-                                            <Chip variant='outlined' color='primary' label={'relevancy'} />
+                                            <Chip variant='outlined' color='error' label={'correctness'} />{' '}
+                                            <Chip variant='outlined' color='error' label={'relevancy'} />
+                                        </TableCell>
+                                    </TableRow>
+                                    <TableRow style={{ verticalAlign: 'top' }}>
+                                        <TableCell>
+                                            <FormControlLabel value='comparative' control={<Radio />} label='Compare 2 Flows - LLM Based' />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant='h4'>Compare Responses from 2 Chatflows using an LLM</Typography>
+                                            <Typography variant='body2'>
+                                                Executes both chatflows using the dataset inputs, and compares the answers by using an LLM.
+                                                Used to generate comparative scores.Currently, only
+                                                <span style={{ fontWeight: 'bold' }}> OpenAI</span> LLM is supported.
+                                                <br />
+                                                <span style={{ fontWeight: 'bold' }}>Select the credential to use.</span>
+                                            </Typography>
+                                            <Box>
+                                                <CredentialInputHandler
+                                                    disabled={evaluationType !== 'comparative'}
+                                                    size='small'
+                                                    sx={{ flexGrow: 1, marginBottom: 3 }}
+                                                    key={credentialId}
+                                                    data={credentialId ? { credential: credentialId } : {}}
+                                                    inputParam={{
+                                                        label: 'Connect Credential',
+                                                        name: 'credential',
+                                                        type: 'credential',
+                                                        credentialNames: ['openAIApi']
+                                                    }}
+                                                    onSelect={(newValue) => {
+                                                        setCredentialId(newValue)
+                                                    }}
+                                                />
+                                            </Box>
+                                            <Box>
+                                                <span style={{ fontWeight: 'bold' }}> Select the second Chatflow.</span>
+                                                <Dropdown
+                                                    disabled={evaluationType !== 'comparative'}
+                                                    name='chatflow2'
+                                                    defaultOption='Select Chatflow'
+                                                    options={flows}
+                                                    onSelect={(newValue) => setChatflow2(newValue)}
+                                                    value={chatflow2}
+                                                />
+                                            </Box>
+                                            <Chip variant='outlined' color='primary' style={{ margin: 5 }} label={'latency'} />{' '}
+                                            <Chip variant='outlined' color='primary' label={'token count'} />{' '}
+                                            <Chip variant='outlined' color='primary' label={'cost'} />{' '}
+                                            <Chip variant='outlined' color='error' label={'comparative score'} />
+                                            <Chip variant='outlined' color='error' label={'reasoning'} />{' '}
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>

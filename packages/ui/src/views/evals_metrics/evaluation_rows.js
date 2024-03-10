@@ -143,10 +143,17 @@ const EvalEvaluationRows = () => {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Input</TableCell>
-                                <TableCell>Actual Output</TableCell>
                                 <TableCell>Anticipated Output</TableCell>
+                                <TableCell>Actual Output</TableCell>
+                                {evaluation?.evaluationType === 'llm' && (
+                                    <>
+                                        <TableCell>Reasoning</TableCell>
+                                        <TableCell>Score</TableCell>
+                                    </>
+                                )}
+                                <TableCell>Tokens</TableCell>
+                                <TableCell>Latency</TableCell>
                                 <TableCell>Cost</TableCell>
-                                <TableCell>BERT Score</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -162,11 +169,14 @@ const EvalEvaluationRows = () => {
                                     <>
                                         <TableRow key={index} sx={{ border: 0 }}>
                                             <TableCell sx={{ border: 0 }}>{item.input}</TableCell>
-                                            <TableCell sx={{ border: 0 }}>{item.actualOutput}</TableCell>
                                             <TableCell sx={{ border: 0 }}>{item.expectedOutput}</TableCell>
-                                            <TableCell sx={{ border: 0 }} width='10%'>
-                                                0
-                                            </TableCell>
+                                            <TableCell sx={{ border: 0 }}>{item.actualOutput}</TableCell>
+                                            {evaluation?.evaluationType === 'llm' && (
+                                                <>
+                                                    <TableCell sx={{ border: 0 }}>{item?.reasoning}</TableCell>
+                                                    <TableCell sx={{ border: 0 }}>{item?.score}</TableCell>
+                                                </>
+                                            )}
                                             <TableCell
                                                 sx={{ border: 0 }}
                                                 width='10%'
@@ -178,70 +188,57 @@ const EvalEvaluationRows = () => {
                                                     size='small'
                                                     color='info'
                                                     label={
-                                                        item.metrics?.bert_precision
-                                                            ? 'Precision: ' + item.metrics?.bert_precision
-                                                            : 'Precision: N/A'
-                                                    }
-                                                />{' '}
-                                                <Chip
-                                                    style={{ marginBottom: '4px' }}
-                                                    variant='outlined'
-                                                    size='small'
-                                                    color='info'
-                                                    label={
-                                                        item.metrics?.bert_recall ? 'Recall: ' + item.metrics?.bert_recall : 'Recall: N/A'
-                                                    }
-                                                />{' '}
-                                                <Chip
-                                                    style={{ marginBottom: '4px' }}
-                                                    variant='outlined'
-                                                    size='small'
-                                                    color='info'
-                                                    label={item.metrics?.bert_f1 ? 'F1: ' + item.metrics?.bert_f1 : 'F1: N/A'}
-                                                />{' '}
-                                            </TableCell>
-                                        </TableRow>
-                                        <TableRow key={index} sx={{ '&:last-child td, &:last-child tr': { border: 0 } }}>
-                                            <TableCell
-                                                colspan='5'
-                                                style={{ whiteSpace: 'normal', wordWrap: 'break-word', maxWidth: '10%' }}
-                                            >
-                                                <Chip
-                                                    variant='outlined'
-                                                    size='small'
-                                                    color='primary'
-                                                    label={item.metrics?.latency ? 'Latency: ' + item.metrics?.latency : 'Latency: N/A'}
-                                                />{' '}
-                                                <Chip
-                                                    variant='outlined'
-                                                    size='small'
-                                                    color='secondary'
-                                                    label={item.metrics?.totalTokens ? 'Total: ' + item.metrics?.totalTokens : 'Total: N/A'}
-                                                />{' '}
-                                                <Chip
-                                                    variant='outlined'
-                                                    size='small'
-                                                    color='secondary'
-                                                    label={
                                                         item.metrics?.promptTokens ? 'Prompt: ' + item.metrics?.promptTokens : 'Prompt: N/A'
                                                     }
                                                 />{' '}
                                                 <Chip
+                                                    style={{ marginBottom: '4px' }}
                                                     variant='outlined'
                                                     size='small'
-                                                    color='secondary'
-                                                    label={item.metrics?.inputTokens ? 'Input: ' + item.metrics?.inputTokens : 'Input: N/A'}
-                                                />{' '}
-                                                <Chip
-                                                    variant='outlined'
-                                                    size='small'
-                                                    color='secondary'
+                                                    color='info'
                                                     label={
                                                         item.metrics?.responseTokens
                                                             ? 'Response: ' + item.metrics?.responseTokens
                                                             : 'Response: N/A'
                                                     }
                                                 />{' '}
+                                                <Chip
+                                                    style={{ marginBottom: '4px' }}
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='info'
+                                                    label={item.metrics?.totalTokens ? 'Total: ' + item.metrics?.totalTokens : 'Total: N/A'}
+                                                />{' '}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{ border: 0 }}
+                                                width='10%'
+                                                style={{ whiteSpace: 'normal', wordWrap: 'break-word', maxWidth: '10%' }}
+                                            >
+                                                <Chip
+                                                    style={{ marginBottom: '4px' }}
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='info'
+                                                    label={item.metrics?.apiLatency ? 'API: ' + item.metrics?.apiLatency : 'API: N/A'}
+                                                />{' '}
+                                                <Chip
+                                                    style={{ marginBottom: '4px' }}
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='info'
+                                                    label={item.metrics?.chain ? 'Chain: ' + item.metrics?.chain : 'Chain: N/A'}
+                                                />{' '}
+                                                <Chip
+                                                    style={{ marginBottom: '4px' }}
+                                                    variant='outlined'
+                                                    size='small'
+                                                    color='info'
+                                                    label={item.metrics?.llm ? 'LLM: ' + item.metrics?.llm : 'LLM: N/A'}
+                                                />{' '}
+                                            </TableCell>
+                                            <TableCell sx={{ border: 0 }} width='10%'>
+                                                0
                                             </TableCell>
                                         </TableRow>
                                     </>

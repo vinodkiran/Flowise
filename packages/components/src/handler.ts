@@ -16,6 +16,7 @@ import { LunaryHandler } from '@langchain/community/callbacks/handlers/lunary'
 
 import { getCredentialData, getCredentialParam } from './utils'
 import { ICommonObject, INodeData } from './Interface'
+import { EvaluationRunTracer } from '../evaluation/EvaluationRunTracer'
 
 export interface AgentRun extends Run {
     actions: AgentAction[]
@@ -220,10 +221,13 @@ export const additionalCallbacks = async (nodeData: INodeData, options: ICommonO
     try {
         if (!options.analytic) return []
 
+        console.log('****** options.analytic === ' + options.analytic + '******')
         const analytic = JSON.parse(options.analytic)
+        console.log('****** options.analytic 2 ===  ' + JSON.stringify(analytic, null, 2) + '******')
         const callbacks: any = []
 
         for (const provider in analytic) {
+            console.log('******' + provider + '****** status is ' + analytic[provider].status)
             const providerStatus = analytic[provider].status as boolean
             if (providerStatus) {
                 const credentialId = analytic[provider].credentialId as string
@@ -287,6 +291,9 @@ export const additionalCallbacks = async (nodeData: INodeData, options: ICommonO
 
                     const handler = new LunaryHandler(lunaryFields)
                     callbacks.push(handler)
+                } else if (provider === 'evaluation') {
+                    const evalationHandler = new EvaluationRunTracer(options.evaluationRunId)
+                    callbacks.push(evalationHandler)
                 }
             }
         }
