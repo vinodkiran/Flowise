@@ -1,4 +1,5 @@
 import { ICommonObject, INode, INodeData as INodeDataFromComponent, INodeParams } from 'flowise-components'
+import { Column } from "typeorm";
 
 export type MessageType = 'apiMessage' | 'userMessage'
 
@@ -253,4 +254,6 @@ export interface IEvaluationRun {
     actualOutput: string
     metrics: string
     runDate: Date
+    reasoning: string
+    score: number
 }

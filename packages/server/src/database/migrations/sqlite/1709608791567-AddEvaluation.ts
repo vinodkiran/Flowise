@@ -1,29 +1,5 @@
 import { MigrationInterface, QueryRunner } from 'typeorm'
 
-/*
-export interface IEvaluation {
-    id: string
-    name: string
-    chatflowId: string
-    chatflowName: string
-    datasetId: string
-    datasetName: string
-    evaluationType: string
-    average_metrics: string
-    status: string
-    runDate: Date
-}
-
-export interface IEvaluationRun {
-    id: string
-    evaluationId: string
-    input: string
-    expectedOutput: string
-    actualOutput: string
-    metrics: string
-    runDate: Date
-}
- */
 export class AddEvaluation1709608791567 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(
@@ -46,7 +22,9 @@ export class AddEvaluation1709608791567 implements MigrationInterface {
 "input" text NOT NULL, 
 "expectedOutput" text NOT NULL, 
 "actualOutput" text NOT NULL, 
-"metrics" text NOT NULL, 
+"reasoning" TEXT DEFAULT NULL,
+"score" integer DEFAULT 0,
+"metrics" text NULL,
 "runDate" datetime NOT NULL DEFAULT (datetime('now')));`
         )
     }

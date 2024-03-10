@@ -15,6 +15,10 @@ export class EvaluationRun implements IEvaluationRun {
     expectedOutput: string
     @Column({ type: 'text' })
     actualOutput: string
+    @Column({ type: 'text' })
+    reasoning: string
+    @Column()
+    score: number
     @UpdateDateColumn()
     runDate: Date
 }

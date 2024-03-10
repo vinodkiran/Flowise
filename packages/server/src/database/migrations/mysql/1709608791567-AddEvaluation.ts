@@ -24,6 +24,8 @@ export class AddEvaluation1709608791567 implements MigrationInterface {
                 \`expectedOutput\` TEXT NOT NULL,
                 \`actualOutput\` TEXT NOT NULL,
                 \`input\` TEXT DEFAULT NULL,
+                \`reasoning\` TEXT DEFAULT NULL,
+                \`score\` INTEGER(2) DEFAULT 0,
                 \`metrics\` TEXT DEFAULT NULL,
                 \`runDate\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
                 PRIMARY KEY (\`id\`)
