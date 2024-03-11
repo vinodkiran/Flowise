@@ -58,15 +58,14 @@ const CanvasNode = ({ data }) => {
         setShowDialog(true)
     }
 
-    const hideShowElements = (source) => {
+    const _hideShowFromArray = (arr, source) => {
         let visibilityChanged = false
-        data.inputParams.map((inputParam) => {
+        arr.map((inputParam) => {
             if (inputParam.displayConditions) {
                 inputParam.displayConditions.map((condition) => {
                     if (condition.element === source) {
                         switch (condition.comparison) {
                             case 'equals': {
-                                console.log(typeof condition.value)
                                 if (typeof condition.value === 'object') {
                                     inputParam['hidden'] = !condition.value.includes(data.inputs[source])
                                 } else {
@@ -85,11 +84,25 @@ const CanvasNode = ({ data }) => {
                 })
             }
         })
+        return visibilityChanged
+    }
+
+    const hideShowElements = (source) => {
+        let visibilityChanged = false
+        visibilityChanged = _hideShowFromArray(data.inputParams, source)
         if (visibilityChanged) {
             //refresh the dialogProps, to ensure the new visibility is applied.
-            // onDialogClicked()
-            console.log('visibility changed...' + data.inputs[source])
+            if (showDialog) {
+                const dialogProps = {
+                    data,
+                    inputParams: data.inputParams.filter((param) => param.additionalParams).filter((param) => !param.hidden),
+                    confirmButtonName: 'Save',
+                    cancelButtonName: 'Cancel'
+                }
+                setDialogProps(dialogProps)
+            }
         }
+        _hideShowFromArray(data.inputAnchors, source)
     }
 
     useEffect(() => {
@@ -237,7 +250,7 @@ const CanvasNode = ({ data }) => {
                             </>
                         )}
                         {data.inputAnchors
-                            .filter((inputParam) => !inputParam.hidden)
+                            .filter((inputAnchor) => !inputAnchor.hidden)
                             .map((inputAnchor, index) => (
                                 <NodeInputHandler key={index} inputAnchor={inputAnchor} data={data} hideShowElements={hideShowElements} />
                             ))}

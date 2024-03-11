@@ -352,7 +352,10 @@ const NodeInputHandler = ({
                         {inputParam.type === 'boolean' && (
                             <SwitchInput
                                 disabled={disabled}
-                                onChange={(newValue) => (data.inputs[inputParam.name] = newValue)}
+                                onChange={(newValue) => {
+                                    data.inputs[inputParam.name] = newValue
+                                    visibilityChange(inputParam.name)
+                                }}
                                 value={data.inputs[inputParam.name] ?? inputParam.default ?? false}
                             />
                         )}

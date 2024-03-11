@@ -38,7 +38,15 @@ class ChatOpenAI_ChatModels implements INode {
                 label: 'Cache',
                 name: 'cache',
                 type: 'BaseCache',
-                optional: true
+                optional: true,
+                hidden: true,
+                displayConditions: [
+                    {
+                        element: 'modelName',
+                        comparison: 'equals',
+                        value: ['gpt-4-vision-preview', 'gpt-4-1106-vision-preview']
+                    }
+                ]
             },
             {
                 label: 'Model Name',
@@ -208,6 +216,7 @@ class ChatOpenAI_ChatModels implements INode {
                 ],
                 default: 'low',
                 optional: false,
+                hidden: true,
                 additionalParams: true,
                 displayConditions: [
                     {
