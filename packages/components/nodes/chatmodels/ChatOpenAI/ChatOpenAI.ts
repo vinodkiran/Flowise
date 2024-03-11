@@ -178,7 +178,14 @@ class ChatOpenAI_ChatModels implements INode {
                 description:
                     'Automatically uses gpt-4-vision-preview when image is being uploaded from chat. Only works with LLMChain, Conversation Chain, ReAct Agent, and Conversational Agent',
                 default: false,
-                optional: true
+                optional: true,
+                displayConditions: [
+                    {
+                        element: 'modelName',
+                        comparison: 'equals',
+                        value: ['gpt-4-vision-preview', 'gpt-4-1106-vision-preview']
+                    }
+                ]
             },
             {
                 label: 'Image Resolution',
@@ -201,7 +208,14 @@ class ChatOpenAI_ChatModels implements INode {
                 ],
                 default: 'low',
                 optional: false,
-                additionalParams: true
+                additionalParams: true,
+                displayConditions: [
+                    {
+                        element: 'allowImageUploads',
+                        comparison: 'equals',
+                        value: true
+                    }
+                ]
             }
         ]
     }

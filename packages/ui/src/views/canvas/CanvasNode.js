@@ -66,7 +66,12 @@ const CanvasNode = ({ data }) => {
                     if (condition.element === source) {
                         switch (condition.comparison) {
                             case 'equals': {
-                                inputParam['hidden'] = data.inputs[source] !== condition.value
+                                console.log(typeof condition.value)
+                                if (typeof condition.value === 'object') {
+                                    inputParam['hidden'] = !condition.value.includes(data.inputs[source])
+                                } else {
+                                    inputParam['hidden'] = data.inputs[source] !== condition.value
+                                }
                                 visibilityChanged = true
                                 break
                             }
@@ -82,7 +87,7 @@ const CanvasNode = ({ data }) => {
         })
         if (visibilityChanged) {
             //refresh the dialogProps, to ensure the new visibility is applied.
-            onDialogClicked()
+            // onDialogClicked()
             console.log('visibility changed...' + data.inputs[source])
         }
     }
@@ -239,7 +244,7 @@ const CanvasNode = ({ data }) => {
                         {data.inputParams
                             .filter((inputParam) => !inputParam.hidden)
                             .map((inputParam, index) => (
-                                <NodeInputHandler key={index} inputParam={inputParam} data={data} />
+                                <NodeInputHandler key={index} inputParam={inputParam} data={data} hideShowElements={hideShowElements} />
                             ))}
                         {data.inputParams.find((param) => param.additionalParams) && (
                             <div

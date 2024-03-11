@@ -276,5 +276,5 @@ export abstract class FlowiseSummaryMemory extends ConversationSummaryMemory imp
 export interface IConditionalDisplay {
     element: string
     comparison: string
-    value: string
+    value: string | boolean | number | string[] | boolean[] | number[]
 }
