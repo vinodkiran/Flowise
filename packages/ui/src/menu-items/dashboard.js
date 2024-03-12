@@ -92,6 +92,22 @@ const dashboard = {
             breadcrumbs: true
         },
         {
+            id: 'dataset',
+            title: 'Datasets',
+            type: 'item',
+            url: '/dataset',
+            icon: icons.IconDatabase,
+            breadcrumbs: true
+        },
+        {
+            id: 'eval',
+            title: 'Evaluations',
+            type: 'item',
+            url: '/evaluation',
+            icon: icons.IconTestPipe,
+            breadcrumbs: true
+        },
+        {
             id: 'evals',
             title: 'Metrics & Evaluations',
             type: 'collapse',

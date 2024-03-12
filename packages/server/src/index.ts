@@ -2474,8 +2474,7 @@ export class App {
                       appDataSource: this.AppDataSource,
                       databaseEntities,
                       analytic: chatflow.analytic,
-                      evaluationRunId: evaluationRunId
-                      analytic: chatflow.analytic,
+                      evaluationRunId: evaluationRunId,
                       uploads: incomingInput.uploads
                   })
 
