@@ -29,7 +29,6 @@ export const sqliteMigrations = [
     AddUsedToolsToChatMessage1699481607341,
     AddCategoryToChatFlow1699900910291,
     AddFileAnnotationsToChatMessage1700271021237,
-    AddVariableEntity1699325775451,
     AddDatasets1709360247876,
     AddEvaluation1709608791567,
     AddFileUploadsToChatMessage1701788586491,
