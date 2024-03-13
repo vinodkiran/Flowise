@@ -17,26 +17,26 @@ import {
 } from '@mui/material'
 
 // API
-import evaluationApi from 'api/evaluation'
+import evaluationApi from '@/api/evaluation'
 
 // Hooks
-import useApi from '../../hooks/useApi'
+import useApi from '@/hooks/useApi'
 import { useNavigate } from 'react-router-dom'
-import useConfirm from '../../hooks/useConfirm'
+import useConfirm from '@/hooks/useConfirm'
 import { useTheme } from '@mui/material/styles'
 import { useDispatch, useSelector } from 'react-redux'
-import useNotifier from '../../utils/useNotifier'
+import useNotifier from '@/utils/useNotifier'
 
 // const
 import TableCell from '@mui/material/TableCell'
-import MainCard from '../../ui-component/cards/MainCard'
+import MainCard from '@/ui-component/cards/MainCard'
 import { IconPlus, IconRefresh, IconTrash, IconTable, IconX } from '@tabler/icons'
-import { StyledButton } from '../../ui-component/button/StyledButton'
-import { BackdropLoader } from 'ui-component/loading/BackdropLoader'
+import { StyledButton } from '@/ui-component/button/StyledButton'
+import { BackdropLoader } from '@/ui-component/loading/BackdropLoader'
 import moment from 'moment/moment'
-import ConfirmDialog from '../../ui-component/dialog/ConfirmDialog'
+import ConfirmDialog from '@/ui-component/dialog/ConfirmDialog'
 import CreateEvaluationDialog from './CreateEvaluationDialog'
-import { closeSnackbar as closeSnackbarAction, enqueueSnackbar as enqueueSnackbarAction } from '../../store/actions'
+import { closeSnackbar as closeSnackbarAction, enqueueSnackbar as enqueueSnackbarAction } from '@/store/actions'
 
 const EvalsEvaluation = () => {
     const navigate = useNavigate()

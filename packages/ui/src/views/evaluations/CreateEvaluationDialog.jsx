@@ -26,25 +26,25 @@ import {
 } from '@mui/material'
 
 // Project imports
-import { StyledButton } from 'ui-component/button/StyledButton'
-import ConfirmDialog from 'ui-component/dialog/ConfirmDialog'
+import { StyledButton } from '@/ui-component/button/StyledButton'
+import ConfirmDialog from '@/ui-component/dialog/ConfirmDialog'
 
 // Icons
 import { IconTestPipe2 } from '@tabler/icons'
 
 // API
-import chatflowsApi from 'api/chatflows'
-import useApi from '../../hooks/useApi'
-import datasetsApi from 'api/dataset'
+import chatflowsApi from '@/api/chatflows'
+import useApi from '@/hooks/useApi'
+import datasetsApi from '@/api/dataset'
 
 // Hooks
 
 // utils
-import useNotifier from 'utils/useNotifier'
-import { Dropdown } from '../../ui-component/dropdown/Dropdown'
+import useNotifier from '@/utils/useNotifier'
+import { Dropdown } from '@/ui-component/dropdown/Dropdown'
 import TableCell from '@mui/material/TableCell'
 import CredentialInputHandler from '../canvas/CredentialInputHandler'
-import { TooltipWithParser } from '../../ui-component/tooltip/TooltipWithParser'
+import { TooltipWithParser } from '@/ui-component/tooltip/TooltipWithParser'
 
 // const
 

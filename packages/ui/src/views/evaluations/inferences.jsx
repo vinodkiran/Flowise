@@ -20,15 +20,15 @@ import {
 import { useTheme } from '@mui/material/styles'
 
 // project imports
-import MainCard from 'ui-component/cards/MainCard'
-import { gridSpacing } from 'store/constant'
-import MetricsItemCard from '../../ui-component/cards/MetricsItemCard'
-import { MetricsBarChart } from '../../ui-component/charts/MetricsBarChart'
+import MainCard from '@/ui-component/cards/MainCard'
+import { gridSpacing } from '@/store/constant'
+import MetricsItemCard from '@/ui-component/cards/MetricsItemCard'
+import { MetricsBarChart } from '@/ui-component/charts/MetricsBarChart'
 import Link from '@mui/material/Link'
-import MetricsDateToolbar from '../../ui-component/toolbar/MetricsDateToolbar'
-import { StyledButton } from '../../ui-component/button/StyledButton'
-import useApi from '../../hooks/useApi'
-import metricsApi from '../../api/metrics'
+import MetricsDateToolbar from '@/ui-component/toolbar/MetricsDateToolbar'
+import { StyledButton } from '@/ui-component/button/StyledButton'
+import useApi from '@/hooks/useApi'
+import metricsApi from '@/api/metrics'
 import TableCell from '@mui/material/TableCell'
 
 // API

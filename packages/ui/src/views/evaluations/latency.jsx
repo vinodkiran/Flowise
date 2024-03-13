@@ -6,13 +6,13 @@ import { Grid, Box, ButtonGroup, Stack, Divider, Breadcrumbs, Typography } from 
 import { useTheme } from '@mui/material/styles'
 
 // project imports
-import MainCard from 'ui-component/cards/MainCard'
-import { gridSpacing } from 'store/constant'
+import MainCard from '@/ui-component/cards/MainCard'
+import { gridSpacing } from '@/store/constant'
 import Link from '@mui/material/Link'
-import { MetricsLineChart } from '../../ui-component/charts/MetricsLineChart'
-import MetricsItemCard from '../../ui-component/cards/MetricsItemCard'
-import MetricsDateToolbar from '../../ui-component/toolbar/MetricsDateToolbar'
-import { StyledButton } from '../../ui-component/button/StyledButton'
+import { MetricsLineChart } from '@/ui-component/charts/MetricsLineChart'
+import MetricsItemCard from '@/ui-component/cards/MetricsItemCard'
+import MetricsDateToolbar from '@/ui-component/toolbar/MetricsDateToolbar'
+import { StyledButton } from '@/ui-component/button/StyledButton'
 
 // API
 

@@ -19,21 +19,21 @@ import {
     Toolbar,
     Typography
 } from '@mui/material'
-import { Dropdown } from '../../ui-component/dropdown/Dropdown'
+import { Dropdown } from '@/ui-component/dropdown/Dropdown'
 
 // API
-import chatflowsApi from 'api/chatflows'
-import useApi from '../../hooks/useApi'
+import chatflowsApi from '@/api/chatflows'
+import useApi from '@/hooks/useApi'
 
 // const
-import { baseURL } from 'store/constant'
+import { baseURL } from '@/store/constant'
 import TableCell from '@mui/material/TableCell'
-import { BackdropLoader } from 'ui-component/loading/BackdropLoader'
-import MainCard from '../../ui-component/cards/MainCard'
+import { BackdropLoader } from '@/ui-component/loading/BackdropLoader'
+import MainCard from '@/ui-component/cards/MainCard'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@mui/material/styles'
 import { useSelector } from 'react-redux'
-import MetricsDateToolbar from '../../ui-component/toolbar/MetricsDateToolbar'
+import MetricsDateToolbar from '@/ui-component/toolbar/MetricsDateToolbar'
 
 const EvalsBenchMarking = () => {
     const navigate = useNavigate()

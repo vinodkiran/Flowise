@@ -22,7 +22,6 @@ import {
     IncomingInput,
     INodeData,
     INodeDirectedGraph,
-    ChatMessageRatingType,
     IReactFlowNode,
     IReactFlowObject,
     IUploadFileSizeAndTypes
@@ -2058,7 +2057,7 @@ export class App {
      * @param {boolean} feedback
      */
     async getChatMessage(
-        chatflowid: string | undefined,
+        chatflowid: string,
         chatType: chatType | undefined,
         sortOrder: string = 'ASC',
         chatId?: string,
@@ -2069,15 +2068,58 @@ export class App {
         messageId?: string,
         feedback?: boolean
     ): Promise<ChatMessage[]> {
+        const setDateToStartOrEndOfDay = (dateTimeStr: string, setHours: 'start' | 'end') => {
+            const date = new Date(dateTimeStr)
+            if (isNaN(date.getTime())) {
+                return undefined
+            }
+            setHours === 'start' ? date.setHours(0, 0, 0, 0) : date.setHours(23, 59, 59, 999)
+            return date
+        }
+
         let fromDate
-        if (startDate) fromDate = this.setDateToStartOrEndOfDay(startDate, 'start')
+        if (startDate) fromDate = setDateToStartOrEndOfDay(startDate, 'start')
 
         let toDate
-        if (endDate) toDate = this.setDateToStartOrEndOfDay(endDate, 'end')
+        if (endDate) toDate = setDateToStartOrEndOfDay(endDate, 'end')
+
+        if (feedback) {
+            const query = this.AppDataSource.getRepository(ChatMessage).createQueryBuilder('chat_message')
+
+            // do the join with chat message feedback based on messageId for each chat message in the chatflow
+            query
+                .leftJoinAndMapOne('chat_message.feedback', ChatMessageFeedback, 'feedback', 'feedback.messageId = chat_message.id')
+                .where('chat_message.chatflowid = :chatflowid', { chatflowid })
+
+            // based on which parameters are available add `andWhere` clauses to the query
+            if (chatType) {
+                query.andWhere('chat_message.chatType = :chatType', { chatType })
+            }
+            if (chatId) {
+                query.andWhere('chat_message.chatId = :chatId', { chatId })
+            }
+            if (memoryType) {
+                query.andWhere('chat_message.memoryType = :memoryType', { memoryType })
+            }
+            if (sessionId) {
+                query.andWhere('chat_message.sessionId = :sessionId', { sessionId })
+            }
+
+            // set date range
+            query.andWhere('chat_message.createdDate BETWEEN :fromDate AND :toDate', {
+                fromDate: fromDate ?? new Date().setMonth(new Date().getMonth() - 1),
+                toDate: toDate ?? new Date()
+            })
+            // sort
+            query.orderBy('chat_message.createdDate', sortOrder === 'DESC' ? 'DESC' : 'ASC')
+
+            const messages = await query.getMany()
+            return messages
+        }
 
         return await this.AppDataSource.getRepository(ChatMessage).find({
             where: {
-                chatflowid: chatflowid ?? undefined,
+                chatflowid,
                 chatType,
                 chatId,
                 memoryType: memoryType ?? undefined,
@@ -2121,40 +2163,6 @@ export class App {
         console.log('chatflowid ' + chatflowid)
         console.log('fromDate ' + fromDate)
         console.log('toDate ' + toDate)
-
-        if (feedback) {
-            const query = this.AppDataSource.getRepository(ChatMessage).createQueryBuilder('chat_message')
-
-            // do the join with chat message feedback based on messageId for each chat message in the chatflow
-            query
-                .leftJoinAndMapOne('chat_message.feedback', ChatMessageFeedback, 'feedback', 'feedback.messageId = chat_message.id')
-                .where('chat_message.chatflowid = :chatflowid', { chatflowid })
-
-            // based on which parameters are available add `andWhere` clauses to the query
-            if (chatType) {
-                query.andWhere('chat_message.chatType = :chatType', { chatType })
-            }
-            if (chatId) {
-                query.andWhere('chat_message.chatId = :chatId', { chatId })
-            }
-            if (memoryType) {
-                query.andWhere('chat_message.memoryType = :memoryType', { memoryType })
-            }
-            if (sessionId) {
-                query.andWhere('chat_message.sessionId = :sessionId', { sessionId })
-            }
-
-            // set date range
-            query.andWhere('chat_message.createdDate BETWEEN :fromDate AND :toDate', {
-                fromDate: fromDate ?? new Date().setMonth(new Date().getMonth() - 1),
-                toDate: toDate ?? new Date()
-            })
-            // sort
-            query.orderBy('chat_message.createdDate', sortOrder === 'DESC' ? 'DESC' : 'ASC')
-
-            const messages = await query.getMany()
-            return messages
-        }
 
         return await this.AppDataSource.getRepository(ChatMessage).find({
             where: {

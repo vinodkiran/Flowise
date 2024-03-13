@@ -21,12 +21,12 @@ import {
 import { useTheme } from '@mui/material/styles'
 
 // project imports
-import MainCard from 'ui-component/cards/MainCard'
+import MainCard from '@/ui-component/cards/MainCard'
 
 // API
-import useNotifier from '../../utils/useNotifier'
-import useApi from '../../hooks/useApi'
-import evaluationApi from 'api/evaluation'
+import useNotifier from '@/utils/useNotifier'
+import useApi from '@/hooks/useApi'
+import evaluationApi from '@/api/evaluation'
 
 // Hooks
 

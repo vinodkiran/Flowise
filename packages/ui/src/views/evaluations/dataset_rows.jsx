@@ -21,21 +21,21 @@ import {
 import { useTheme } from '@mui/material/styles'
 
 // project imports
-import MainCard from 'ui-component/cards/MainCard'
-import { StyledButton } from '../../ui-component/button/StyledButton'
+import MainCard from '@/ui-component/cards/MainCard'
+import { StyledButton } from '@/ui-component/button/StyledButton'
 
 // API
-import useNotifier from '../../utils/useNotifier'
-import { closeSnackbar as closeSnackbarAction, enqueueSnackbar as enqueueSnackbarAction } from '../../store/actions'
-import useConfirm from '../../hooks/useConfirm'
-import useApi from '../../hooks/useApi'
-import datasetsApi from 'api/dataset'
+import useNotifier from '@/utils/useNotifier'
+import { closeSnackbar as closeSnackbarAction, enqueueSnackbar as enqueueSnackbarAction } from '@/store/actions'
+import useConfirm from '@/hooks/useConfirm'
+import useApi from '@/hooks/useApi'
+import datasetsApi from '@/api/dataset'
 
 // Hooks
 
 // icons
 import { IconTrash, IconEdit, IconPlus, IconX, IconUpload } from '@tabler/icons'
-import ConfirmDialog from '../../ui-component/dialog/ConfirmDialog'
+import ConfirmDialog from '@/ui-component/dialog/ConfirmDialog'
 import AddEditDatasetRowDialog from './AddEditDatasetRowDialog'
 import Link from '@mui/material/Link'
 

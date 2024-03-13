@@ -22,24 +22,24 @@ import {
 import { useTheme } from '@mui/material/styles'
 
 // project imports
-import MainCard from 'ui-component/cards/MainCard'
-import { StyledButton } from '../../ui-component/button/StyledButton'
+import MainCard from '@/ui-component/cards/MainCard'
+import { StyledButton } from '@/ui-component/button/StyledButton'
 import * as React from 'react'
 
 // API
-import useNotifier from '../../utils/useNotifier'
-import { closeSnackbar as closeSnackbarAction, enqueueSnackbar as enqueueSnackbarAction } from '../../store/actions'
-import useConfirm from '../../hooks/useConfirm'
-import useApi from '../../hooks/useApi'
-import datasetsApi from 'api/dataset'
+import useNotifier from '@/utils/useNotifier'
+import { closeSnackbar as closeSnackbarAction, enqueueSnackbar as enqueueSnackbarAction } from '@/store/actions'
+import useConfirm from '@/hooks/useConfirm'
+import useApi from '@/hooks/useApi'
+import datasetsApi from '@/api/dataset'
 import moment from 'moment/moment'
 
 // Hooks
 
 // icons
-import VariablesEmptySVG from 'assets/images/variables_empty.svg'
+import VariablesEmptySVG from '@/assets/images/variables_empty.svg'
 import { IconTrash, IconEdit, IconPlus, IconSearch, IconTable, IconX } from '@tabler/icons'
-import ConfirmDialog from '../../ui-component/dialog/ConfirmDialog'
+import ConfirmDialog from '@/ui-component/dialog/ConfirmDialog'
 import AddEditDatasetDialog from './AddEditDatasetDialog'
 import { useNavigate } from 'react-router-dom'
 
