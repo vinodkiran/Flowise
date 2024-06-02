@@ -262,3 +262,4 @@ export interface IUploadFileSizeAndTypes {
 
 // DocumentStore related
 export * from './Interface.DocumentStore'
+export * from './Interface.Workflow'

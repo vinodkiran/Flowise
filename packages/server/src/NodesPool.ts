@@ -1,4 +1,4 @@
-import { IComponentNodes, IComponentCredentials } from './Interface'
+import { IComponentNodes, IComponentCredentials, IComponentNodesPool } from "./Interface";
 import path from 'path'
 import { Dirent } from 'fs'
 import { getNodeModulesPackagePath } from './utils'
@@ -7,7 +7,7 @@ import { ICommonObject } from 'flowise-components'
 import logger from './utils/logger'
 
 export class NodesPool {
-    componentNodes: IComponentNodes = {}
+    componentNodes: IComponentNodesPool = {}
     componentCredentials: IComponentCredentials = {}
     private credentialIconPath: ICommonObject = {}
 

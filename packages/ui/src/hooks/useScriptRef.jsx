@@ -5,12 +5,14 @@ import { useEffect, useRef } from 'react'
 const useScriptRef = () => {
     const scripted = useRef(true)
 
-    useEffect(
-        () => () => {
+    useEffect(() => {
+        //onMount
+        scripted.current = true
+        return () => {
+            //onUnMount
             scripted.current = false
-        },
-        []
-    )
+        }
+    }, [])
 
     return scripted
 }

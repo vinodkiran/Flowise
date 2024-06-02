@@ -20,6 +20,11 @@ import { sanitizeMiddleware, getCorsOptions, getAllowedIframeOrigins } from './u
 import { Telemetry } from './utils/telemetry'
 import flowiseApiV1Router from './routes'
 import errorHandlerMiddleware from './middlewares/errors'
+import { DeployedWorkflowPool } from './workflow/DeployedWorkflowPool'
+import { ActiveTestWebhookPool } from './workflow/ActiveTestWebhookPool'
+import { ActiveTestTriggerPool } from './workflow/ActiveTestTriggerPool'
+import { getRandomSubdomain } from "./utils/workflow.utils";
+import localtunnel from "localtunnel";
 
 declare global {
     namespace Express {
@@ -35,7 +40,10 @@ export class App {
     chatflowPool: ChatflowPool
     cachePool: CachePool
     telemetry: Telemetry
-    AppDataSource: DataSource = getDataSource()
+    AppDataSource: DataSource
+    activeTestTriggerPool: ActiveTestTriggerPool
+    activeTestWebhookPool: ActiveTestWebhookPool
+    deployedWorkflowsPool: DeployedWorkflowPool
 
     constructor() {
         this.app = express()
@@ -44,6 +52,7 @@ export class App {
     async initDatabase() {
         // Initialize database
         try {
+            this.AppDataSource = await getDataSource()
             await this.AppDataSource.initialize()
             logger.info('📦 [server]: Data Source is initializing...')
 
@@ -56,6 +65,30 @@ export class App {
 
             // Initialize chatflow pool
             this.chatflowPool = new ChatflowPool()
+            // Initialize local tunnel
+            if (process.env.ENABLE_TUNNEL === 'true') {
+                const subdomain = getRandomSubdomain()
+
+                const tunnelSettings: localtunnel.TunnelConfig = {
+                    subdomain
+                }
+
+                const port = parseInt(process.env.PORT || '', 10) || 3000
+
+                const createTunnel = (timeout: number): Promise<localtunnel.Tunnel | string> => {
+                    return new Promise(function (resolve, reject) {
+                        localtunnel(port, tunnelSettings).then(resolve, reject)
+                        setTimeout(resolve, timeout, 'TUNNEL_TIMED_OUT')
+                    })
+                }
+
+                const newTunnel = await createTunnel(10000)
+
+                if (typeof newTunnel !== 'string') {
+                    process.env.TUNNEL_BASE_URL = `${newTunnel.url}/`
+                    console.info('🌐[server]: TUNNEL_BASE_URL = ', process.env.TUNNEL_BASE_URL)
+                }
+            }
 
             // Initialize API keys
             await getAPIKeys()
@@ -70,6 +103,15 @@ export class App {
             // Initialize cache pool
             this.cachePool = new CachePool()
 
+            // Initialize activeTestTriggerPool instance
+            this.activeTestTriggerPool = new ActiveTestTriggerPool()
+
+            // Initialize activeTestWebhookPool instance
+            this.activeTestWebhookPool = new ActiveTestWebhookPool()
+
+            // Initialize deployed workflows instances
+            this.deployedWorkflowsPool = new DeployedWorkflowPool()
+            await this.deployedWorkflowsPool.initialize(this.AppDataSource, this.nodesPool.componentNodes)
             // Initialize telemetry
             this.telemetry = new Telemetry()
             logger.info('📦 [server]: Data Source has been initialized!')
@@ -173,6 +215,11 @@ export class App {
             res.sendFile(uiHtmlPath)
         })
 
+        // TODO: Add workflow socket io
+        // workflowRoutes.configureRoutes()
+        // if (socketIO) {
+        //     workflowRoutes.socketIO = socketIO
+        // }
         // Error handling
         this.app.use(errorHandlerMiddleware)
     }
@@ -191,7 +238,7 @@ export class App {
 let serverApp: App | undefined
 
 export async function getAllChatFlow(): Promise<IChatFlow[]> {
-    return await getDataSource().getRepository(ChatFlow).find()
+    return (await getDataSource()).getRepository(ChatFlow).find()
 }
 
 export async function start(): Promise<void> {

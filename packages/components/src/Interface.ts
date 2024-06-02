@@ -86,6 +86,12 @@ export interface INodeParams {
     loadMethod?: string
     hidden?: boolean
     variables?: ICommonObject[]
+
+    //from workflow integration
+    array?: Array<INodeParams>
+    loadFromDbCollections?: DbCollectionName[]
+    show?: INodeDisplay
+    hide?: INodeDisplay
 }
 
 export interface INodeExecutionData {
@@ -109,6 +115,11 @@ export interface INodeProperties {
     filePath?: string
     badge?: string
     deprecateMessage?: string
+
+    //from workflow integration
+    incoming?: number // number of incoming connections
+    outgoing?: number // number of outgoing connections
+    // end of workflow integration
 }
 
 export interface INode extends INodeProperties {
@@ -124,6 +135,21 @@ export interface INode extends INodeProperties {
     }
     init?(nodeData: INodeData, input: string, options?: ICommonObject): Promise<any>
     run?(nodeData: INodeData, input: string, options?: ICommonObject): Promise<string | ICommonObject>
+
+    //from workflow integration
+    actions?: INodeParams[]
+    credentials?: INodeParams[]
+    networks?: INodeParams[]
+    inputParameters?: INodeParams[]
+    webhookMethods?: {
+        createWebhook: (nodeData: INodeData, webhookFullUrl: string) => Promise<string | undefined>
+        deleteWebhook: (nodeData: INodeData, webhookId: string) => Promise<boolean>
+    }
+    runWorkflow?(nodeData: INodeData, options?: ICommonObject): Promise<INodeExecutionData[] | null>
+    runTrigger?(nodeData: INodeData): Promise<void>
+    removeTrigger?(nodeData: INodeData): Promise<void>
+    runWebhook?(nodeData: INodeData): Promise<IWebhookNodeExecutionData[] | null>
+    // end of workflow integration
 }
 
 export interface INodeData extends INodeProperties {
@@ -133,6 +159,21 @@ export interface INodeData extends INodeProperties {
     credential?: string
     instance?: any
     loadMethod?: string // method to load async options
+
+    // from workflow integration
+    emitEventKey?: string // event emitter key for triggers
+
+    actions?: ICommonObject
+    credentials?: ICommonObject
+    networks?: ICommonObject
+    inputParameters?: ICommonObject
+    outputResponses?: ICommonObject
+
+    loadFromDbCollections?: DbCollectionName[] // method to load async options
+
+    req?: Request // For webhook
+    webhookEndpoint?: string // For webhook
+    // end of workflow integration
 }
 
 export interface INodeCredential {
@@ -224,6 +265,7 @@ export interface IDocument<Metadata extends Record<string, any> = Record<string,
 import { PromptTemplate as LangchainPromptTemplate, PromptTemplateInput } from '@langchain/core/prompts'
 import { VectorStore } from '@langchain/core/vectorstores'
 import { Document } from '@langchain/core/documents'
+import { DbCollectionName, IWebhookNodeExecutionData } from "./Interface.Workflow";
 
 export class PromptTemplate extends LangchainPromptTemplate {
     promptValues: ICommonObject
@@ -344,3 +386,5 @@ export interface IVisionChatModal {
     revertToOriginalModel(): void
     setMultiModalOption(multiModalOption: IMultiModalOption): void
 }
+
+export * from './Interface.Workflow'
