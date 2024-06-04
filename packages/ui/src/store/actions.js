@@ -16,6 +16,10 @@ export const HIDE_CANVAS_DIALOG = '@canvas/HIDE_CANVAS_DIALOG'
 export const SET_COMPONENT_NODES = '@canvas/SET_COMPONENT_NODES'
 export const SET_COMPONENT_CREDENTIALS = '@canvas/SET_COMPONENT_CREDENTIALS'
 
+// action - worflows
+export const REMOVE_EDGE = '@canvas/REMOVE_EDGE'
+export const SET_WORKFLOW = '@canvas/SET_WORKFLOW'
+
 // action - notifier reducer
 export const ENQUEUE_SNACKBAR = 'ENQUEUE_SNACKBAR'
 export const CLOSE_SNACKBAR = 'CLOSE_SNACKBAR'

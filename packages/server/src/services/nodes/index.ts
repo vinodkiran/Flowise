@@ -10,16 +10,50 @@ import { getErrorMessage } from '../../errors/utils'
 
 // Get all component nodes
 const getAllNodes = async () => {
+    return getAllChatflowNodes()
+}
+
+// Get all component nodes
+const getAllWorkflowNodes = async () => {
     try {
         const appServer = getRunningExpressApp()
-        const dbResponse = []
+        const returnData = []
         for (const nodeName in appServer.nodesPool.componentNodes) {
-            const clonedNode = cloneDeep(appServer.nodesPool.componentNodes[nodeName])
-            dbResponse.push(clonedNode)
+            const node = appServer.nodesPool.componentNodes[nodeName]
+            // type parameter is only available for workflow nodes
+            if (node.type === 'action' || node.type === 'trigger' || node.type === 'webhook') {
+                const clonedNode = cloneDeep(node)
+                returnData.push(clonedNode)
+            }
         }
-        return dbResponse
+        return returnData
     } catch (error) {
-        throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error: nodesService.getAllNodes - ${getErrorMessage(error)}`)
+        throw new InternalFlowiseError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            `Error: nodesService.getAllWorkflowNodes - ${getErrorMessage(error)}`
+        )
+    }
+}
+
+// Get all component nodes
+const getAllChatflowNodes = async () => {
+    try {
+        const appServer = getRunningExpressApp()
+        const returnData = []
+        for (const nodeName in appServer.nodesPool.componentNodes) {
+            const node = appServer.nodesPool.componentNodes[nodeName]
+            // type parameter is only available for workflow nodes
+            if (node.type !== 'action' && node.type !== 'trigger' && node.type !== 'webhook') {
+                const clonedNode = cloneDeep(node)
+                returnData.push(clonedNode)
+            }
+        }
+        return returnData
+    } catch (error) {
+        throw new InternalFlowiseError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            `Error: nodesService.getAllChatflowNodes - ${getErrorMessage(error)}`
+        )
     }
 }
 
@@ -48,9 +82,15 @@ const getAllNodesForCategory = async (category: string) => {
 const getNodeByName = async (nodeName: string) => {
     try {
         const appServer = getRunningExpressApp()
+
         if (Object.prototype.hasOwnProperty.call(appServer.nodesPool.componentNodes, nodeName)) {
-            const dbResponse = appServer.nodesPool.componentNodes[nodeName]
-            return dbResponse
+            //const dbResponse = appServer.nodesPool.componentNodes[nodeName]
+            const clonedNode = JSON.parse(
+                JSON.stringify(appServer.nodesPool.componentNodes[nodeName], (key, val) => {
+                    if (key !== 'cronJobs' && key !== 'providers') return val
+                })
+            )
+            return clonedNode
         } else {
             throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Node ${nodeName} not found`)
         }
@@ -160,5 +200,6 @@ export default {
     getSingleNodeIcon,
     getSingleNodeAsyncOptions,
     executeCustomFunction,
-    getAllNodesForCategory
+    getAllNodesForCategory,
+    getAllWorkflowNodes
 }

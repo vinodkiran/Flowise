@@ -27,9 +27,6 @@ export class Execution implements IExecution {
     }
 
     @Column()
-    name: string
-
-    @Column()
     executionData: string
 
     @Column()

@@ -8,11 +8,25 @@ import {
     IconLock,
     IconRobot,
     IconVariable,
-    IconFiles
+    IconFiles,
+    IconHierarchy3,
+    IconListCheck
 } from '@tabler/icons-react'
 
 // constant
-const icons = { IconUsersGroup, IconHierarchy, IconBuildingStore, IconKey, IconTool, IconLock, IconRobot, IconVariable, IconFiles }
+const icons = {
+    IconUsersGroup,
+    IconHierarchy,
+    IconBuildingStore,
+    IconKey,
+    IconTool,
+    IconLock,
+    IconRobot,
+    IconVariable,
+    IconFiles,
+    IconHierarchy3,
+    IconListCheck
+}
 
 // ==============================|| DASHBOARD MENU ITEMS ||============================== //
 
@@ -92,6 +106,22 @@ const dashboard = {
             type: 'item',
             url: '/document-stores',
             icon: icons.IconFiles,
+            breadcrumbs: true
+        },
+        {
+            id: 'workflows',
+            title: 'Workflows',
+            type: 'item',
+            url: '/workflows',
+            icon: icons.IconHierarchy3,
+            breadcrumbs: true
+        },
+        {
+            id: 'executions',
+            title: 'Executions',
+            type: 'item',
+            url: '/executions',
+            icon: icons.IconListCheck,
             breadcrumbs: true
         }
     ]

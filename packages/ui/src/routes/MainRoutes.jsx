@@ -34,6 +34,10 @@ const DocumentStoreDetail = Loadable(lazy(() => import('@/views/docstore/Documen
 const ShowStoredChunks = Loadable(lazy(() => import('@/views/docstore/ShowStoredChunks')))
 const LoaderConfigPreviewChunks = Loadable(lazy(() => import('@/views/docstore/LoaderConfigPreviewChunks')))
 
+// workflow routing
+const Workflows = Loadable(lazy(() => import('@/views/workflows')))
+// variables routing
+const Executions = Loadable(lazy(() => import('@/views/executions')))
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -55,6 +59,14 @@ const MainRoutes = {
         {
             path: '/marketplaces',
             element: <Marketplaces />
+        },
+        {
+            path: '/workflows',
+            element: <Workflows />
+        },
+        {
+            path: '/executions',
+            element: <Executions />
         },
         {
             path: '/apikey',

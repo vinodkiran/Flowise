@@ -13,6 +13,15 @@ const getAllNodes = async (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
+const getAllWorkflowNodes = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const apiResponse = await nodesService.getAllWorkflowNodes()
+        return res.json(apiResponse)
+    } catch (error) {
+        next(error)
+    }
+}
+
 const getNodeByName = async (req: Request, res: Response, next: NextFunction) => {
     try {
         if (typeof req.params === 'undefined' || !req.params.name) {
@@ -95,5 +104,6 @@ export default {
     getSingleNodeIcon,
     getSingleNodeAsyncOptions,
     executeCustomFunction,
-    getNodesByCategory
+    getNodesByCategory,
+    getAllWorkflowNodes
 }

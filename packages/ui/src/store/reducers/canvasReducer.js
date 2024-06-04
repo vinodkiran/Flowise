@@ -6,7 +6,9 @@ export const initialState = {
     chatflow: null,
     canvasDialogShow: false,
     componentNodes: [],
-    componentCredentials: []
+    componentCredentials: [],
+    workflow: null,
+    removeEdgeId: ''
 }
 
 // ==============================|| CANVAS REDUCER ||============================== //
@@ -27,6 +29,11 @@ const canvasReducer = (state = initialState, action) => {
             return {
                 ...state,
                 chatflow: action.chatflow
+            }
+        case actionTypes.SET_WORKFLOW:
+            return {
+                ...state,
+                workflow: action.workflow
             }
         case actionTypes.SHOW_CANVAS_DIALOG:
             return {

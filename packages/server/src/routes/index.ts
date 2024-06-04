@@ -81,6 +81,7 @@ router.use('/vector', vectorRouter)
 router.use('/verify', verifyRouter)
 router.use('/version', versionRouter)
 router.use('/upsert-history', upsertHistoryRouter)
-router.use('/workflow', workflowRouter)
+router.use('/workflows', workflowRouter)
+router.use('/executions', workflowRouter)
 
 export default router

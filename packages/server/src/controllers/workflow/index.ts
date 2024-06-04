@@ -70,7 +70,7 @@ const createWorkflow = async (req: Request, res: Response, next: NextFunction) =
 const updateWorkflow = async (req: Request, res: Response, next: NextFunction) => {
     try {
         if (!req.body) {
-            throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: workflowController.createWorkflow - body not provided!`)
+            throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: workflowController.updateWorkflow - body not provided!`)
         }
         if (typeof req.params === 'undefined' || !req.params.shortId) {
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: workflowController.updateWorkflow - id not provided!`)
