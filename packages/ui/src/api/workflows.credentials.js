@@ -3,7 +3,7 @@ import client from './client'
 const getCredentials = (credentialName) => client.get('/credentials', { params: { credentialName } })
 const getCredentialsByName = (componentCredentialName) => client.get(`/credentials?credentialName=${componentCredentialName}`)
 
-const getCredentialParams = (name) => client.get(`/node-credentials/${name}`)
+const getCredentialParams = (name) => client.get(`/components-credentials/${name}`)
 
 const getSpecificCredential = (id, isEncrypted) => client.get(`/credentials/${id}`, { params: { isEncrypted } })
 const getSpecificComponentCredential = (name) => client.get(`/components-credentials/${name}`)

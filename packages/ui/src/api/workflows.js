@@ -14,7 +14,7 @@ const testWorkflow = (startingNodeId, body) => client.post(`/workflows/test/${st
 
 const deleteWorkflow = (shortId) => client.delete(`/workflows/${shortId}`)
 
-const testWorkflowNode = (name, body) => client.post(`/node-test/${name}`, body) //body: ITestNodeBody
+const testWorkflowNode = (name, body) => client.post(`/workflows/node-test/${name}`, body) //body: ITestNodeBody
 
 export default {
     getAllWorkflows,

@@ -114,7 +114,7 @@ const deployWorkflow = async (req: Request, res: Response, next: NextFunction) =
 // Return configured local tunnel
 const getTunnelUrl = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const apiResponse = await workflowService.getTunnelURL()
+        const apiResponse = workflowService.getTunnelURL()
         return res.json(apiResponse)
     } catch (error) {
         next(error)
