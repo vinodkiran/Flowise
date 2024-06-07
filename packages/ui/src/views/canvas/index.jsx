@@ -95,6 +95,8 @@ const Canvas = () => {
     const [isUpsertButtonEnabled, setIsUpsertButtonEnabled] = useState(false)
     const [isSyncNodesButtonEnabled, setIsSyncNodesButtonEnabled] = useState(false)
 
+    const [lastUpdatedDateTime, setLasUpdatedDateTime] = useState('')
+
     const reactFlowWrapper = useRef(null)
 
     // ==============================|| Chatflow API ||============================== //
@@ -103,6 +105,7 @@ const Canvas = () => {
     const createNewChatflowApi = useApi(chatflowsApi.createNewChatflow)
     const updateChatflowApi = useApi(chatflowsApi.updateChatflow)
     const getSpecificChatflowApi = useApi(chatflowsApi.getSpecificChatflow)
+    const getHasChatflowChangedApi = useApi(chatflowsApi.getHasChatflowChanged)
 
     // ==============================|| Events & Actions ||============================== //
 
@@ -198,7 +201,7 @@ const Canvas = () => {
         }
     }
 
-    const handleSaveFlow = (chatflowName) => {
+    const handleSaveFlow = async (chatflowName) => {
         if (reactFlowInstance) {
             const nodes = reactFlowInstance.getNodes().map((node) => {
                 const nodeData = cloneDeep(node.data)
@@ -231,6 +234,8 @@ const Canvas = () => {
                     name: chatflowName,
                     flowData
                 }
+                await getHasChatflowChangedApi.request(chatflow.id, lastUpdatedDateTime)
+                console.log(getHasChatflowChangedApi.data)
                 updateChatflowApi.request(chatflow.id, updateBody)
             }
         }
@@ -402,6 +407,7 @@ const Canvas = () => {
         if (getSpecificChatflowApi.data) {
             const chatflow = getSpecificChatflowApi.data
             const initialFlow = chatflow.flowData ? JSON.parse(chatflow.flowData) : []
+            setLasUpdatedDateTime(chatflow.updatedDate)
             setNodes(initialFlow.nodes || [])
             setEdges(initialFlow.edges || [])
             dispatch({ type: SET_CHATFLOW, chatflow })

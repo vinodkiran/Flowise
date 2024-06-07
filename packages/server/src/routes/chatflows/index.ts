@@ -16,4 +16,7 @@ router.put(['/', '/:id'], chatflowsController.updateChatflow)
 // DELETE
 router.delete(['/', '/:id'], chatflowsController.deleteChatflow)
 
+// CHECK FOR CHANGE
+router.get('/has-changed/:id/:lastUpdatedDateTime', chatflowsController.checkIfChatflowHasChanged)
+
 export default router

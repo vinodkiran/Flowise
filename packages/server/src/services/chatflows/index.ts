@@ -286,6 +286,28 @@ const _checkAndUpdateDocumentStoreUsage = async (chatflow: ChatFlow) => {
     }
 }
 
+// Check if chatflow has changed after lastUpdatedDateTime
+const checkIfChatflowHasChanged = async (chatflowId: string, lastUpdatedDateTime: string): Promise<any> => {
+    try {
+        const appServer = getRunningExpressApp()
+        //**
+        const chatflow = await appServer.AppDataSource.getRepository(ChatFlow).findOneBy({
+            id: chatflowId
+        })
+        if (!chatflow) {
+            throw new InternalFlowiseError(StatusCodes.NOT_FOUND, `Chatflow ${chatflowId} not found`)
+        }
+        // parse the lastUpdatedDateTime as a date and
+        //check if the updatedDate is the same as the lastUpdatedDateTime
+        return { hasChanged: chatflow.updatedDate.toISOString() !== lastUpdatedDateTime }
+    } catch (error) {
+        throw new InternalFlowiseError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            `Error: chatflowsService.checkIfChatflowIsValidForUploads - ${getErrorMessage(error)}`
+        )
+    }
+}
+
 export default {
     checkIfChatflowIsValidForStreaming,
     checkIfChatflowIsValidForUploads,
@@ -296,5 +318,6 @@ export default {
     saveChatflow,
     updateChatflow,
     getSinglePublicChatflow,
-    getSinglePublicChatbotConfig
+    getSinglePublicChatbotConfig,
+    checkIfChatflowHasChanged
 }

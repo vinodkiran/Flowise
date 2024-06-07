@@ -18,6 +18,8 @@ const getIsChatflowStreaming = (id) => client.get(`/chatflows-streaming/${id}`)
 
 const getAllowChatflowUploads = (id) => client.get(`/chatflows-uploads/${id}`)
 
+const getHasChatflowChanged = (id, lastUpdatedDateTime) => client.get(`/chatflows/has-changed/${id}/${lastUpdatedDateTime}`)
+
 export default {
     getAllChatflows,
     getAllAgentflows,
@@ -27,5 +29,6 @@ export default {
     updateChatflow,
     deleteChatflow,
     getIsChatflowStreaming,
-    getAllowChatflowUploads
+    getAllowChatflowUploads,
+    getHasChatflowChanged
 }

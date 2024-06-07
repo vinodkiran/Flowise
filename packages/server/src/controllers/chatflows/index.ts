@@ -159,6 +159,26 @@ const getSinglePublicChatbotConfig = async (req: Request, res: Response, next: N
     }
 }
 
+const checkIfChatflowHasChanged = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        if (typeof req.params === 'undefined' || !req.params.id) {
+            throw new InternalFlowiseError(
+                StatusCodes.PRECONDITION_FAILED,
+                `Error: chatflowsRouter.checkIfChatflowHasChanged - id not provided!`
+            )
+        }
+        if (!req.params.lastUpdatedDateTime) {
+            throw new InternalFlowiseError(
+                StatusCodes.PRECONDITION_FAILED,
+                `Error: chatflowsRouter.checkIfChatflowHasChanged - lastUpdatedDateTime not provided!`
+            )
+        }
+        const apiResponse = await chatflowsService.checkIfChatflowHasChanged(req.params.id, req.params.lastUpdatedDateTime)
+        return res.json(apiResponse)
+    } catch (error) {
+        next(error)
+    }
+}
 export default {
     checkIfChatflowIsValidForStreaming,
     checkIfChatflowIsValidForUploads,
@@ -169,5 +189,6 @@ export default {
     saveChatflow,
     updateChatflow,
     getSinglePublicChatflow,
-    getSinglePublicChatbotConfig
+    getSinglePublicChatbotConfig,
+    checkIfChatflowHasChanged
 }
