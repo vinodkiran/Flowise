@@ -248,7 +248,9 @@ const OutputResponses = ({ nodeId, nodeParamsType, nodeFlowData, nodes, edges, w
                                 size='small'
                                 variant='outlined'
                                 startIcon={<IconCopy />}
-                                onClick={() => navigator.clipboard.writeText(`${baseURL}/api/v1/workflows/webhook/${nodeFlowData.webhookEndpoint}`)}
+                                onClick={() =>
+                                    navigator.clipboard.writeText(`${baseURL}/api/v1/workflows/webhook/${nodeFlowData.webhookEndpoint}`)
+                                }
                             >
                                 Copy URL
                             </Button>
@@ -286,7 +288,9 @@ const OutputResponses = ({ nodeId, nodeParamsType, nodeFlowData, nodes, edges, w
                                         variant='outlined'
                                         startIcon={<IconCopy />}
                                         onClick={() =>
-                                            navigator.clipboard.writeText(`${tunnelURL}api/v1/workflows/webhook/${nodeFlowData.webhookEndpoint}`)
+                                            navigator.clipboard.writeText(
+                                                `${tunnelURL}api/v1/workflows/webhook/${nodeFlowData.webhookEndpoint}`
+                                            )
                                         }
                                     >
                                         Copy URL
@@ -295,7 +299,9 @@ const OutputResponses = ({ nodeId, nodeParamsType, nodeFlowData, nodes, edges, w
                                         size='small'
                                         variant='outlined'
                                         startIcon={<IconArrowUpRightCircle />}
-                                        onClick={() => window.open(`${tunnelURL}api/v1/workflows/webhook/${nodeFlowData.webhookEndpoint}`, '_blank')}
+                                        onClick={() =>
+                                            window.open(`${tunnelURL}api/v1/workflows/webhook/${nodeFlowData.webhookEndpoint}`, '_blank')
+                                        }
                                     >
                                         Open in New Tab
                                     </Button>
