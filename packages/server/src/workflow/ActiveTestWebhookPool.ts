@@ -21,15 +21,15 @@ export class ActiveTestWebhookPool {
      * @param {string} webhookId
      */
     add(
-      webhookEndpoint: string,
-      httpMethod: WebhookMethod,
-      nodes: IReactFlowNode[],
-      edges: IReactFlowEdge[],
-      nodeData: INodeDataFromComponent,
-      webhookNodeId: string,
-      clientId: string,
-      isTestWorkflow: boolean,
-      webhookId?: string
+        webhookEndpoint: string,
+        httpMethod: WebhookMethod,
+        nodes: IReactFlowNode[],
+        edges: IReactFlowEdge[],
+        nodeData: INodeDataFromComponent,
+        webhookNodeId: string,
+        clientId: string,
+        isTestWorkflow: boolean,
+        webhookId?: string
     ) {
         const key = `${webhookEndpoint}_${httpMethod}`
         this.activeTestWebhooks[key] = {

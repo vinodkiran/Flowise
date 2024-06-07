@@ -4,17 +4,10 @@ import {
     INodeCredential,
     INodeData as INodeDataFromComponent,
     INodeExecutionData,
-    INodeParams,
     IWebhookNodeExecutionData
 } from 'flowise-components'
 import EventEmitter from 'events'
-import {
-    IComponentNodes,
-    ICredentialDataDecrypted,
-    INodeDirectedGraph,
-    IReactFlowEdge,
-    IReactFlowNode
-} from "./Interface";
+import { IComponentNodes, ICredentialDataDecrypted, INodeDirectedGraph, IReactFlowEdge, IReactFlowNode } from './Interface'
 
 // START OF WORKFLOW RELATED INTERFACES
 export interface IWorkFlow {

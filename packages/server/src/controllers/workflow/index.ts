@@ -260,7 +260,23 @@ const deleteExecution = async (req: Request, res: Response, next: NextFunction) 
 // ----------------------------------------
 
 // GET webhook requests
+const getWebhook = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const apiResponse = await workflowService.getWebhook(req, res)
+        return res.json(apiResponse)
+    } catch (error) {
+        next(error)
+    }
+}
 
+const postWebhook = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const apiResponse = await workflowService.postWebhook(req, res)
+        return res.json(apiResponse)
+    } catch (error) {
+        next(error)
+    }
+}
 // this.app.get(`/api/v1/webhook/*`, express.raw(), async (req: Request, res: Response) => {
 //     const splitUrl = req.path.split('/api/v1/webhook/')
 //     const webhookEndpoint = splitUrl[splitUrl.length - 1]
@@ -424,5 +440,7 @@ export default {
     getExecutionById,
     createNewExecution,
     updateExecution,
-    deleteExecution
+    deleteExecution,
+    getWebhook,
+    postWebhook
 }

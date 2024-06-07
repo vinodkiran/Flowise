@@ -14,10 +14,12 @@ router.get('/get-tunnel-url', workflowController.getTunnelUrl)
 router.post('/node-test/:name', workflowController.testNode)
 router.post('/test/:startingNodeId', workflowController.testWorkflowFromStart)
 
-//router.get(`/webhook/*`, workflowController.get)
-// router.post(`/api/v1/webhook/*`, )
+router.get(`/webhook/*`, workflowController.getWebhook)
+router.post(`/webhook/*`, workflowController.postWebhook)
+
 //router.get('/get-tunnel-url', workflowController.getTunnelUrl)
 //router.get('/oauth2', workflowController.outh2)
+
 router.get('/oauth2-redirecturl', workflowController.getOAuth2HTMLPath)
 
 export default router

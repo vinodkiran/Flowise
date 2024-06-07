@@ -23,6 +23,7 @@ import {
     checkOAuth2TokenRefreshed,
     constructGraphs,
     constructGraphsAndGetStartingNodes,
+    processWebhook,
     resolveVariables
 } from '../../utils/workflow.utils'
 import { DataSource } from 'typeorm'
@@ -36,6 +37,7 @@ import { StatusCodes } from 'http-status-codes'
 import { getErrorMessage } from '../../errors/utils'
 import { WorkFlow } from '../../database/entities/WorkFlow'
 import { Server } from 'socket.io'
+import { Request, Response } from 'express'
 
 // ----------------------------------------
 // Active Test Pools
@@ -582,13 +584,6 @@ const getAllExecutions = async () => {
                 workflow: workflow as IWorkFlow
             })
         }
-        // executions.map(async (execution) => {
-        //     let workflow = await this.AppDataSource.getRepository(WorkFlow).findOneBy({ shortId: execution.workflowShortId })
-        //     response.push({
-        //         ...execution,
-        //         workflow: workflow as IWorkFlow
-        //     })
-        // })
         return response
     } catch (error) {
         throw new InternalFlowiseError(
@@ -691,6 +686,29 @@ const getWebhookRequests = async (webhookEndpoint: string) => {
     }
 }
 
+const getWebhook = async (req: Request, res: Response) => {
+    try {
+        const appServer = getRunningExpressApp()
+        const splitUrl = req.path.split('/api/v1/webhook/')
+        const webhookEndpoint = splitUrl[splitUrl.length - 1]
+        await processWebhook(
+            res,
+            req,
+            appServer.AppDataSource,
+            webhookEndpoint,
+            'GET',
+            appServer.nodesPool.componentNodes,
+            req.io,
+            appServer.deployedWorkflowsPool,
+            appServer.activeTestWebhookPool
+        )
+    } catch (error) {
+        throw new InternalFlowiseError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            `Error: workflowService.getWebhookRequests - ${getErrorMessage(error)}`
+        )
+    }
+}
 // this.app.get(`/api/v1/webhook/*`, express.raw(), async (req: Request, res: Response) => {
 //     const splitUrl = req.path.split('/api/v1/webhook/')
 //     const webhookEndpoint = splitUrl[splitUrl.length - 1]
@@ -707,22 +725,22 @@ const getWebhookRequests = async (webhookEndpoint: string) => {
 //     )
 // })
 
-const postWebhook = async (webhookEndpoint: string) => {
+const postWebhook = async (req: Request, res: Response) => {
     try {
-        if (!webhookEndpoint) {
-            throw new Error('sample error')
-        }
-        // await processWebhook(
-        //     res,
-        //     req,
-        //     this.AppDataSource,
-        //     webhookEndpoint,
-        //     'POST',
-        //     this.nodesPool.componentNodes,
-        //     this.socketIO,
-        //     this.deployedWorkflowsPool,
-        //     this.activeTestWebhookPool
-        // )
+        const appServer = getRunningExpressApp()
+        const splitUrl = req.path.split('/webhook/')
+        const webhookEndpoint = splitUrl[splitUrl.length - 1]
+        await processWebhook(
+            res,
+            req,
+            appServer.AppDataSource,
+            webhookEndpoint,
+            'POST',
+            appServer.nodesPool.componentNodes,
+            req.io,
+            appServer.deployedWorkflowsPool,
+            appServer.activeTestWebhookPool
+        )
         return 'OK'
     } catch (error) {
         throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error: workflowService.getTunnelURL - ${getErrorMessage(error)}`)
@@ -1059,6 +1077,7 @@ export default {
     updateExecution,
     deleteExecution,
     getWebhookRequests,
+    getWebhook,
     postWebhook,
     getTunnelURL,
     oAuth2,

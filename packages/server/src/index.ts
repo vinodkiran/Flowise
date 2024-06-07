@@ -23,8 +23,8 @@ import errorHandlerMiddleware from './middlewares/errors'
 import { DeployedWorkflowPool } from './workflow/DeployedWorkflowPool'
 import { ActiveTestWebhookPool } from './workflow/ActiveTestWebhookPool'
 import { ActiveTestTriggerPool } from './workflow/ActiveTestTriggerPool'
-import { getRandomSubdomain } from "./utils/workflow.utils";
-import localtunnel from "localtunnel";
+import { getRandomSubdomain } from './utils/workflow.utils'
+import localtunnel from 'localtunnel'
 
 declare global {
     namespace Express {
@@ -65,30 +65,30 @@ export class App {
 
             // Initialize chatflow pool
             this.chatflowPool = new ChatflowPool()
-            // Initialize local tunnel
-            if (process.env.ENABLE_TUNNEL === 'true') {
-                const subdomain = getRandomSubdomain()
-
-                const tunnelSettings: localtunnel.TunnelConfig = {
-                    subdomain
-                }
-
-                const port = parseInt(process.env.PORT || '', 10) || 3000
-
-                const createTunnel = (timeout: number): Promise<localtunnel.Tunnel | string> => {
-                    return new Promise(function (resolve, reject) {
-                        localtunnel(port, tunnelSettings).then(resolve, reject)
-                        setTimeout(resolve, timeout, 'TUNNEL_TIMED_OUT')
-                    })
-                }
-
-                const newTunnel = await createTunnel(10000)
-
-                if (typeof newTunnel !== 'string') {
-                    process.env.TUNNEL_BASE_URL = `${newTunnel.url}/`
-                    console.info('🌐[server]: TUNNEL_BASE_URL = ', process.env.TUNNEL_BASE_URL)
-                }
-            }
+            // TODO: Initialize local tunnel
+            // if (process.env.ENABLE_TUNNEL === 'true') {
+            //     const subdomain = getRandomSubdomain()
+            //
+            //     const tunnelSettings: localtunnel.TunnelConfig = {
+            //         subdomain
+            //     }
+            //
+            //     const port = parseInt(process.env.PORT || '', 10) || 3000
+            //
+            //     const createTunnel = (timeout: number): Promise<localtunnel.Tunnel | string> => {
+            //         return new Promise(function (resolve, reject) {
+            //             localtunnel(port, tunnelSettings).then(resolve, reject)
+            //             setTimeout(resolve, timeout, 'TUNNEL_TIMED_OUT')
+            //         })
+            //     }
+            //
+            //     const newTunnel = await createTunnel(10000)
+            //
+            //     if (typeof newTunnel !== 'string') {
+            //         process.env.TUNNEL_BASE_URL = `${newTunnel.url}/`
+            //         console.info('🌐[server]: TUNNEL_BASE_URL = ', process.env.TUNNEL_BASE_URL)
+            //     }
+            // }
 
             // Initialize API keys
             await getAPIKeys()
@@ -215,11 +215,6 @@ export class App {
             res.sendFile(uiHtmlPath)
         })
 
-        // TODO: Add workflow socket io
-        // workflowRoutes.configureRoutes()
-        // if (socketIO) {
-        //     workflowRoutes.socketIO = socketIO
-        // }
         // Error handling
         this.app.use(errorHandlerMiddleware)
     }
