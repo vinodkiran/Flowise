@@ -39,6 +39,7 @@ import verifyRouter from './verify'
 import versionRouter from './versions'
 import upsertHistoryRouter from './upsert-history'
 import workflowRouter from './workflow'
+import executionsRouter from './executions'
 
 const router = express.Router()
 
@@ -82,6 +83,6 @@ router.use('/verify', verifyRouter)
 router.use('/version', versionRouter)
 router.use('/upsert-history', upsertHistoryRouter)
 router.use('/workflows', workflowRouter)
-router.use('/executions', workflowRouter)
+router.use('/executions', executionsRouter)
 
 export default router

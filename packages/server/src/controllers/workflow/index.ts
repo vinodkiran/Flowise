@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
-import { ITestNodeBody } from '../../Interface'
+import { ITestNodeBody, IWebhookResponse, IWorkflowResponse } from "../../Interface";
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { StatusCodes } from 'http-status-codes'
 
@@ -105,7 +105,11 @@ const deployWorkflow = async (req: Request, res: Response, next: NextFunction) =
             throw new InternalFlowiseError(StatusCodes.PRECONDITION_FAILED, `Error: workflowController.deployWorkflow - body not provided!`)
         }
         const apiResponse = await workflowService.deployWorkflow(req.params.shortId, req.body)
-        return res.json(apiResponse)
+        if (typeof apiResponse === 'string') {
+            next(new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, apiResponse))
+        } else {
+            return res.json(apiResponse)
+        }
     } catch (error) {
         next(error)
     }
@@ -271,8 +275,12 @@ const getWebhook = async (req: Request, res: Response, next: NextFunction) => {
 
 const postWebhook = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const apiResponse = await workflowService.postWebhook(req, res)
-        return res.json(apiResponse)
+        const apiResponse:IWebhookResponse = await workflowService.postWebhook(req, res)
+        if (apiResponse.responseType === 'json') {
+            return res.status(apiResponse.statusCode).json(apiResponse.responseBody)
+        } else {
+            return res.status(apiResponse.statusCode).send(apiResponse.responseBody)
+        }
     } catch (error) {
         next(error)
     }

@@ -50,6 +50,12 @@ export interface IWebhook {
     createdDate: Date
 }
 
+export interface IWebhookResponse {
+    statusCode: number,
+    responseBody: any
+    responseType: 'json' | 'text' | 'error'
+}
+
 export interface IContract {
     _id: string
     name: string

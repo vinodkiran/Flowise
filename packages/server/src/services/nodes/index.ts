@@ -22,7 +22,11 @@ const getAllWorkflowNodes = async () => {
             const node = appServer.nodesPool.componentNodes[nodeName]
             // type parameter is only available for workflow nodes
             if (node.type === 'action' || node.type === 'trigger' || node.type === 'webhook') {
-                const clonedNode = cloneDeep(node)
+                const clonedNode = JSON.parse(
+                  JSON.stringify(node, (key, val) => {
+                      if (key !== 'cronJobs' && key !== 'providers') return val
+                  })
+                )
                 returnData.push(clonedNode)
             }
         }

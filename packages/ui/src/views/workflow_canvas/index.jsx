@@ -250,7 +250,7 @@ const Canvas = () => {
                 dispatch({ type: REMOVE_DIRTY })
 
                 // Then deploy
-                const response = await workflowsApi.deployWorkflow(savedWorkflowResponse.shortId)
+                const response = await workflowsApi.deployWorkflow(savedWorkflowResponse.shortId, { halt: false })
                 const deployedWorkflowResponse = response.data
                 //setWorkflow(deployedWorkflowResponse)
                 dispatch({ type: SET_WORKFLOW, workflow: deployedWorkflowResponse })
@@ -270,7 +270,7 @@ const Canvas = () => {
             } catch (error) {
                 const errorData = error.response.data || `${error.response.status}: ${error.response.statusText}`
                 enqueueSnackbar({
-                    message: errorData,
+                    message: errorData.message || errorData,
                     options: {
                         key: new Date().getTime() + Math.random(),
                         variant: 'error',

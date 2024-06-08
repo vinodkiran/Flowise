@@ -12,17 +12,18 @@ import { DataSource } from 'typeorm'
 import lodash from 'lodash'
 import { init } from '../DataSource'
 import { decryptNodeCredentials } from '../services/workflow'
+import { databaseEntities } from "../utils";
+import { getRunningExpressApp } from "../utils/getRunningExpressApp";
 
 export class ChildProcess {
     constructor() {
-        console.log('childProcess constructor')
+        //console.log('childProcess constructor')
     }
     /**
      * Stop child process after 5 secs timeout
      */
     static async stopChildProcess() {
         setTimeout(() => {
-            console.log('child process stopped -- 5 secs timeout')
             process.exit(0)
         }, 50000)
     }
@@ -35,7 +36,7 @@ export class ChildProcess {
     async runWorkflow(messageValue: IRunWorkflowMessageValue): Promise<void> {
         process.on('SIGTERM', ChildProcess.stopChildProcess)
         process.on('SIGINT', ChildProcess.stopChildProcess)
-        console.log(`start of runWorkflow`)
+        // console.log(`start of runWorkflow`)
 
         await sendToParentProcess('start', '_')
 
@@ -48,29 +49,29 @@ export class ChildProcess {
         const exploredNode = {} as IExploredNode
         // In the case of infinite loop, only max 3 loops will be executed
         const maxLoop = 3
-        console.log('starting....')
+        // console.log('starting....')
 
         for (let i = 0; i < startingNodeIds.length; i += 1) {
             nodeQueue.push({ nodeId: startingNodeIds[i], depth: 0 })
             exploredNode[startingNodeIds[i]] = { remainingLoop: maxLoop, lastSeenDepth: 0 }
         }
-        console.log('nodeQueue.length....', nodeQueue.length)
+        // console.log('nodeQueue.length....', nodeQueue.length)
 
         while (nodeQueue.length) {
             const { nodeId, depth } = nodeQueue.shift() as INodeQueue
             const ignoreNodeIds: string[] = []
-            console.log('nodeId....', nodeId)
+            // console.log('nodeId....', nodeId)
 
             if (!startingNodeIds.includes(nodeId)) {
                 const reactFlowNode = reactFlowNodes.find((nd) => nd.id === nodeId)
-                console.log('reactFlowNode ===  ', reactFlowNode)
+                // console.log('before reactFlowNode ')
 
                 if (!reactFlowNode || reactFlowNode === undefined) continue
-                console.log('after reactFlowNode ===  ', reactFlowNode)
+                // console.log('after reactFlowNode ')
 
                 try {
                     const nodeInstanceFilePath = componentNodes[reactFlowNode.data.name].filePath
-                    console.log('nodeInstanceFilePath ===  ', nodeInstanceFilePath)
+                    // console.log('nodeInstanceFilePath ===  ', nodeInstanceFilePath)
                     const nodeModule = await import(nodeInstanceFilePath)
                     const newNodeInstance = new nodeModule.nodeClass()
 
@@ -80,13 +81,18 @@ export class ChildProcess {
 
                     let results: INodeExecutionData[] = []
 
-                    console.log('before loop ')
+                    let options: ICommonObject = {}
+                    options.appDataSource = childAppDataSource
+                    options.databaseEntities = databaseEntities
+
+                    // console.log('before loop ')
                     for (let i = 0; i < reactFlowNodeData.length; i += 1) {
-                        console.log('trying to call :: ' + reactFlowNode.data.name)
-                        const result = await newNodeInstance.runWorkflow!.call(newNodeInstance, reactFlowNodeData[i])
-                        console.log('after call :: ' + reactFlowNode.data.name)
+                        // console.log('trying to call :: ' + reactFlowNode.data.name)
+
+                        const result = await newNodeInstance.runWorkflow!.call(newNodeInstance, reactFlowNodeData[i], options)
+                        // console.log('after call :: ' + reactFlowNode.data.name)
                         checkOAuth2TokenRefreshed(result, reactFlowNodeData[i], childAppDataSource)
-                        console.log('checkOAuth2TokenRefreshed :: ' + reactFlowNode.data.name)
+                        // console.log('checkOAuth2TokenRefreshed :: ' + reactFlowNode.data.name)
                         if (result) results.push(...result)
                     }
 
@@ -162,9 +168,9 @@ export class ChildProcess {
  * @returns {DataSource}
  */
 async function initDB(): Promise<DataSource> {
-    console.log('childProcess initializeDB before init')
+    // console.log('childProcess initializeDB before init')
     const childAppDataSource = await init()
-    console.log('childProcess before initialize')
+    // console.log('childProcess before initialize')
     return childAppDataSource.initialize()
 }
 
@@ -358,7 +364,7 @@ function resolveVariables(reactFlowNodeData: INodeData, workflowExecutedData: IW
  * @returns {Promise<void>}
  */
 async function sendToParentProcess(key: string, value: any): Promise<void> {
-    console.log('**** sendToParentProcess')
+    // console.log('**** sendToParentProcess')
     // tslint:disable-line:no-any
     return new Promise((resolve, reject) => {
         process.send!(
@@ -377,14 +383,14 @@ async function sendToParentProcess(key: string, value: any): Promise<void> {
 }
 
 const childProcess = new ChildProcess()
-console.log('childProcess created')
+// console.log('childProcess created')
 
 process.on('message', async (message: IChildProcessMessage) => {
-    console.log('message received', message.key, message.value)
+    // console.log('message received', message.key)
     if (message.key === 'start') {
-        console.log('message received before start')
+        // console.log('message received before start')
         await childProcess.runWorkflow(message.value)
-        console.log('message received after start')
+        // console.log('message received after start')
         process.exit()
     }
 })

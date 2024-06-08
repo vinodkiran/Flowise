@@ -323,6 +323,7 @@ const deployWorkflow = async (shortId: string, body: any) => {
             )
         }
 
+        body = { deployed: halt ? false : true }
         const updateWorkflow = new WorkFlow()
         Object.assign(updateWorkflow, body)
 
@@ -342,7 +343,7 @@ const deployWorkflow = async (shortId: string, body: any) => {
         }
         return `Workflow ${shortId} not found`
     } catch (error) {
-        throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error: workflowService.haltWorkflow - ${getErrorMessage(error)}`)
+        throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error: workflowService.deployWorkflow - ${getErrorMessage(error)}`)
     }
 }
 
@@ -503,7 +504,7 @@ const testWorkflowFromStart = async (startingNodeId: string, body: ITestWorkflow
                         throw new Error(`Please enable tunnel by setting ENABLE_TUNNEL to true in env file`)
                     }
 
-                    const webhookFullUrl = `${process.env.TUNNEL_BASE_URL}api/v1/webhook/${nodeData.webhookEndpoint}`
+                    const webhookFullUrl = `${process.env.TUNNEL_BASE_URL}api/v1/workflows/webhook/${nodeData.webhookEndpoint}`
                     const webhookId = await webhookNodeInstance.webhookMethods?.createWebhook.call(
                         webhookNodeInstance,
                         nodeData,
@@ -689,10 +690,9 @@ const getWebhookRequests = async (webhookEndpoint: string) => {
 const getWebhook = async (req: Request, res: Response) => {
     try {
         const appServer = getRunningExpressApp()
-        const splitUrl = req.path.split('/api/v1/webhook/')
+        const splitUrl = req.path.split('/webhook/')
         const webhookEndpoint = splitUrl[splitUrl.length - 1]
-        await processWebhook(
-            res,
+        const returnValue = await processWebhook(
             req,
             appServer.AppDataSource,
             webhookEndpoint,
@@ -702,36 +702,21 @@ const getWebhook = async (req: Request, res: Response) => {
             appServer.deployedWorkflowsPool,
             appServer.activeTestWebhookPool
         )
+        return returnValue
     } catch (error) {
         throw new InternalFlowiseError(
             StatusCodes.INTERNAL_SERVER_ERROR,
-            `Error: workflowService.getWebhookRequests - ${getErrorMessage(error)}`
+            `Error: workflowService.getWebhook - ${getErrorMessage(error)}`
         )
     }
 }
-// this.app.get(`/api/v1/webhook/*`, express.raw(), async (req: Request, res: Response) => {
-//     const splitUrl = req.path.split('/api/v1/webhook/')
-//     const webhookEndpoint = splitUrl[splitUrl.length - 1]
-//     await processWebhook(
-//         res,
-//         req,
-//         this.AppDataSource,
-//         webhookEndpoint,
-//         'GET',
-//         this.nodesPool.componentNodes,
-//         this.socketIO,
-//         this.deployedWorkflowsPool,
-//         this.activeTestWebhookPool
-//     )
-// })
 
 const postWebhook = async (req: Request, res: Response) => {
     try {
         const appServer = getRunningExpressApp()
         const splitUrl = req.path.split('/webhook/')
         const webhookEndpoint = splitUrl[splitUrl.length - 1]
-        await processWebhook(
-            res,
+        const returnValue =  await processWebhook(
             req,
             appServer.AppDataSource,
             webhookEndpoint,
@@ -741,9 +726,9 @@ const postWebhook = async (req: Request, res: Response) => {
             appServer.deployedWorkflowsPool,
             appServer.activeTestWebhookPool
         )
-        return 'OK'
+        return returnValue
     } catch (error) {
-        throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error: workflowService.getTunnelURL - ${getErrorMessage(error)}`)
+        throw new InternalFlowiseError(StatusCodes.INTERNAL_SERVER_ERROR, `Error: workflowService.postWebhook - ${getErrorMessage(error)}`)
     }
 }
 

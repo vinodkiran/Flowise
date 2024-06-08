@@ -7,10 +7,10 @@ import {
     IReactFlowNode,
     IReactFlowObject,
     IVariableDict,
-    IWebhookNode,
+    IWebhookNode, IWebhookResponse,
     IWorkflowExecutedData,
     WebhookMethod
-} from '../Interface'
+} from "../Interface";
 import lodash from 'lodash'
 import { ICommonObject, INodeData as INodeDataFromComponent, INodeData, INodeExecutionData } from 'flowise-components'
 import { DataSource } from 'typeorm'
@@ -384,7 +384,6 @@ export const constructGraphsAndGetStartingNodes = (reactFlowNodes: IReactFlowNod
  * @param activeTestWebhooksPool
  */
 export const processWebhook = async (
-    res: Response,
     req: Request,
     AppDataSource: DataSource,
     webhookEndpoint: string,
@@ -392,8 +391,7 @@ export const processWebhook = async (
     componentNodes: IComponentNodesPool,
     io: any,
     deployedWorkflowsPool: DeployedWorkflowPool,
-    activeTestWebhooksPool: ActiveTestWebhookPool
-) => {
+    activeTestWebhooksPool: ActiveTestWebhookPool): Promise<IWebhookResponse> => {
     try {
         // Find if webhook is in activeTestWebhookPool
         const testWebhookKey = `${webhookEndpoint}_${httpMethod}`
@@ -409,7 +407,13 @@ export const processWebhook = async (
                 ;(nodeData as any).req = req
                 const result = await webhookNodeInstance.runWebhook!.call(webhookNodeInstance, nodeData)
 
-                if (result === null) return res.status(200).send('OK!')
+                if (result === null) {
+                    return {
+                        statusCode: 200,
+                        responseBody: 'OK!',
+                        responseType: 'text'
+                    }
+                }
 
                 // Emit webhook result
                 io.to(clientId).emit('testWebhookNodeResponse', result)
@@ -420,18 +424,35 @@ export const processWebhook = async (
                 const webhookResponseCode = (nodeData.inputParameters?.responseCode as number) || 200
                 if ((nodeData.inputParameters?.returnType as string) === 'lastNodeResponse') {
                     const webhookResponseData = result || []
-                    return res.status(webhookResponseCode).json(webhookResponseData)
+                    return {
+                        statusCode: webhookResponseCode,
+                        responseBody: webhookResponseData,
+                        responseType: 'json'
+                    }
+                    //return res.status(webhookResponseCode).json(webhookResponseData)
                 } else {
                     // @ts-ignore
                     const webhookResponseData = (nodeData.inputParameters?.responseData as string) || `Webhook ${req.originalUrl} received!`
-                    return res.status(webhookResponseCode).send(webhookResponseData)
+                    return {
+                        statusCode: webhookResponseCode,
+                        responseBody: webhookResponseData,
+                        responseType: 'json'
+                    }
+                    //return res.status(webhookResponseCode).send(webhookResponseData)
                 }
             } else {
                 // TODO: Temporary Hack to fix the issue with runWebhook
                 ;(nodeData as any).req = req
                 const result = await webhookNodeInstance.runWebhook!.call(webhookNodeInstance, nodeData)
 
-                if (result === null) return res.status(200).send('OK!')
+                if (result === null) {
+                    return {
+                         statusCode: 200,
+                        responseBody: 'OK!',
+                        responseType: 'text'
+                    }
+                    //return res.status(200).send('OK!')
+                }
 
                 const newWorkflowExecutedData = {
                     nodeId: webhookNodeId,
@@ -462,7 +483,12 @@ export const processWebhook = async (
                         true
                     )
                     const webhookResponseData = lastExecutedResult || []
-                    return res.status(webhookResponseCode).json(webhookResponseData)
+                    return {
+                        statusCode: webhookResponseCode,
+                        responseBody: webhookResponseData,
+                        responseType: 'json'
+                    }
+                    //return res.status(webhookResponseCode).json(webhookResponseData)
                 } else {
                     await testWorkflow(
                         webhookNodeId,
@@ -477,7 +503,12 @@ export const processWebhook = async (
                     )
                     // @ts-ignore
                     const webhookResponseData = (nodeData.inputParameters?.responseData as string) || `Webhook ${req.originalUrl} received!`
-                    return res.status(webhookResponseCode).send(webhookResponseData)
+                    return {
+                        statusCode: webhookResponseCode,
+                        responseBody: webhookResponseData,
+                        responseType: 'text'
+                    }
+                    //return res.status(webhookResponseCode).send(webhookResponseData)
                 }
             }
         } else {
@@ -488,8 +519,12 @@ export const processWebhook = async (
 
             if (!webhook) {
                 // @ts-ignore
-                res.status(404).send(`Webhook ${req.originalUrl} not found`)
-                return
+                return {
+                    statusCode: 404,
+                    responseBody: `Webhook ${req.originalUrl} not found`,
+                    responseType: 'error'
+                }
+                //res.status(404).send(`Webhook ${req.originalUrl} not found`)
             }
 
             const nodeId = webhook.nodeId
@@ -500,8 +535,12 @@ export const processWebhook = async (
             })
 
             if (!workflow) {
-                res.status(404).send(`Workflow ${workflowShortId} not found`)
-                return
+                return {
+                    statusCode: 404,
+                    responseBody: `Workflow ${workflowShortId} not found`,
+                    responseType: 'error'
+                }
+                //res.status(404).send(`Workflow ${workflowShortId} not found`)
             }
 
             const flowDataString = workflow.flowData
@@ -512,8 +551,12 @@ export const processWebhook = async (
             const reactFlowNode = reactFlowNodes.find((nd) => nd.id === nodeId)
 
             if (!reactFlowNode) {
-                res.status(404).send(`Node ${nodeId} not found`)
-                return
+                return {
+                    statusCode: 404,
+                    responseBody: `Node ${nodeId} not found`,
+                    responseType: 'error'
+                }
+                //res.status(404).send(`Node ${nodeId} not found`)
             }
 
             const nodeData = reactFlowNode.data
@@ -530,8 +573,12 @@ export const processWebhook = async (
                         message += ', '
                     }
                 }
-                res.status(500).send(message)
-                return
+                return {
+                    statusCode: 500,
+                    responseBody: message,
+                    responseType: 'error'
+                }
+//                res.status(500).send(message)
             }
 
             const nodeInstance = componentNodes[nodeName]
@@ -540,7 +587,14 @@ export const processWebhook = async (
             ;(nodeData as any).req = req
             const result = (await webhookNode.runWebhook!.call(webhookNode, nodeData)) || []
 
-            if (result === null) return res.status(200).send('OK!')
+            if (result === null) {
+                return {
+                    statusCode: 200,
+                    responseBody: 'OK!',
+                    responseType: 'text'
+                }
+                //return res.status(200).send('OK!')
+            }
 
             const webhookResponseCode = (nodeData.inputParameters?.responseCode as number) || 200
 
@@ -556,16 +610,30 @@ export const processWebhook = async (
             if ((nodeData.inputParameters?.returnType as string) === 'lastNodeResponse') {
                 const lastExecutedResult = workflowExecutedData[workflowExecutedData.length - 1]
                 const webhookResponseData = lastExecutedResult?.data || []
-                return res.status(webhookResponseCode).json(webhookResponseData)
+                return {
+                    statusCode: webhookResponseCode,
+                    responseBody: webhookResponseData,
+                    responseType: 'json'
+                }
+                //return res.status(webhookResponseCode).json(webhookResponseData)
             } else {
                 // @ts-ignore
                 const webhookResponseData = (nodeData.inputParameters?.responseData as string) || `Webhook ${req.originalUrl} received!`
-                return res.status(webhookResponseCode).send(webhookResponseData)
+                return {
+                    statusCode: webhookResponseCode,
+                    responseBody: webhookResponseData,
+                    responseType: 'text'
+                }
+                //return res.status(webhookResponseCode).send(webhookResponseData)
             }
         }
     } catch (error) {
-        res.status(500).send(`Webhook error: ${error}`)
-        return
+        return {
+            statusCode: 500,
+            responseBody: `Webhook error: ${error}`,
+            responseType: 'error'
+        }
+        //res.status(500).send(`Webhook error: ${error}`)
     }
 }
 
