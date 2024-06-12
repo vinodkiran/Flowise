@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
-import { ITestNodeBody, IWebhookResponse, IWorkflowResponse } from "../../Interface";
+import { ITestNodeBody, IWebhookResponse } from '../../Interface'
 import { InternalFlowiseError } from '../../errors/internalFlowiseError'
 import { StatusCodes } from 'http-status-codes'
 
@@ -275,7 +275,7 @@ const getWebhook = async (req: Request, res: Response, next: NextFunction) => {
 
 const postWebhook = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const apiResponse:IWebhookResponse = await workflowService.postWebhook(req, res)
+        const apiResponse: IWebhookResponse = await workflowService.postWebhook(req, res)
         if (apiResponse.responseType === 'json') {
             return res.status(apiResponse.statusCode).json(apiResponse.responseBody)
         } else {

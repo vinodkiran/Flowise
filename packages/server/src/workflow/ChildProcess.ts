@@ -12,8 +12,7 @@ import { DataSource } from 'typeorm'
 import lodash from 'lodash'
 import { init } from '../DataSource'
 import { decryptNodeCredentials } from '../services/workflow'
-import { databaseEntities } from "../utils";
-import { getRunningExpressApp } from "../utils/getRunningExpressApp";
+import { databaseEntities } from '../utils'
 
 export class ChildProcess {
     constructor() {
