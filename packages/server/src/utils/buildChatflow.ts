@@ -509,7 +509,7 @@ const utilBuildAgentResponse = async (
             if (sourceDocuments?.length) apiMessage.sourceDocuments = JSON.stringify(sourceDocuments)
             if (usedTools?.length) apiMessage.usedTools = JSON.stringify(usedTools)
             if (agentReasoning?.length) apiMessage.agentReasoning = JSON.stringify(agentReasoning)
-            if (Object.keys(finalAction).length) apiMessage.action = JSON.stringify(finalAction)
+            if (finalAction && Object.keys(finalAction).length) apiMessage.action = JSON.stringify(finalAction)
             const chatMessage = await utilAddChatMessage(apiMessage)
 
             await appServer.telemetry.sendTelemetry('agentflow_prediction_sent', {
@@ -521,7 +521,7 @@ const utilBuildAgentResponse = async (
             })
 
             // Find the previous chat message with the same action id and remove the action
-            if (incomingInput.action && Object.keys(incomingInput.action).length) {
+            if (incomingInput.action && Object.keys(incomingInput.action)?.length) {
                 let query = await appServer.AppDataSource.getRepository(ChatMessage)
                     .createQueryBuilder('chat_message')
                     .where('chat_message.chatId = :chatId', { chatId })
@@ -557,7 +557,7 @@ const utilBuildAgentResponse = async (
             if (sessionId) result.sessionId = sessionId
             if (memoryType) result.memoryType = memoryType
             if (agentReasoning?.length) result.agentReasoning = agentReasoning
-            if (Object.keys(finalAction).length) result.action = finalAction
+            if (finalAction && Object.keys(finalAction).length) result.action = finalAction
 
             return result
         }
